@@ -1,35 +1,23 @@
 # Virtual Pipeline Planner
 
-A Streamlit app for planning **compressed gas transport** (CNG or Hydrogen) via modular road-train combinations.
-
-This planner models **payload capacity**, **fleet utilisation**, **driver compliance**, **infrastructure and transport costs**, and **carbon-credit benefits**.  
-It computes the **Levelized Cost ($/GJ)** and **Levelized Benefit ($/GJ)** for complete virtual pipeline scenarios.
+A Streamlit web application for planning and optimising compressed gas (CNG or Hydrogen) virtual pipelines.  
+The tool models payload capacity, fleet size, driver compliance, infrastructure cost, and carbon benefits for modular trailer-based transport systems.
 
 ---
 
-## 🚀 Run online (recommended)
-The easiest way is to open the hosted version on **Streamlit Cloud**:
+## 🚀 Quick start
 
-👉 [https://iocuana-virtual-pipeline-planner.streamlit.app](https://iocuana-virtual-pipeline-planner.streamlit.app)
+### ▶️ Run online
+The easiest way to use the planner is via Streamlit Cloud:  
+👉 **https://iocuana-virtual-pipeline-planner.streamlit.app**
 
-*(If the link doesn’t load yet, wait 1-2 minutes for the initial build to complete.)*
+No installation required — open the link and the app loads directly in your browser.
 
 ---
 
-## 💻 Run locally
-If you prefer to run it on your own machine:
+### 💻 Run locally (for developers)
 
-```bash
-# Clone this repo
-git clone https://github.com/IOcuana/virtual-pipeline-planner.git
-cd virtual-pipeline-planner
-
-# Create a virtual environment
-python -m venv .venv
-.\.venv\Scripts\activate
-
-# Install requirements
-python -m pip install -r requirements.txt
-
-# Run the app
-streamlit run cng_planner_app_updated_v13_9.py
+1. **Clone this repository**
+   ```bash
+   git clone https://github.com/IOcuana/virtual-pipeline-planner.git
+   cd virtual-pipeline-planner
