@@ -3306,14 +3306,27 @@ with tabs[4]:
         gas_is_h2 = st.session_state.get("gas_type_selected", "Methane") == "Hydrogen"
 
         # --- Persistence (optional): load carbon settings from URL ---
-        _qp = st.experimental_get_query_params()
-        preset_from_url = _qp.get("carbon_preset", [""])[0] == "1"
-        baseline_from_url = _qp.get("baseline", [None])[0]
-        gwp_from_url = _qp.get("gwp", [None])[0]
-        flare_from_url = _qp.get("flare_eff", [None])[0]
-        vent_qp = _qp.get("vent_ef", [None])[0]
-        flare_qp = _qp.get("flare_ef", [None])[0]
-        price_qp = _qp.get("carbon_price", [None])[0]
+        # Streamlit new API: st.query_params (dict-like). Older: experimental_get_query_params().
+        if hasattr(st, "query_params"):
+            _qp = st.query_params  # values are strings (or list-like depending on version)
+            def _qp1(key, default=None):
+                v = _qp.get(key, default)
+                if isinstance(v, (list, tuple)):
+                    return v[0] if v else default
+                return v
+        else:
+            _qp = st.experimental_get_query_params()
+            def _qp1(key, default=None):
+                v = _qp.get(key, [default])
+                return v[0] if isinstance(v, list) else v
+        
+        preset_from_url = (_qp1("carbon_preset", "") == "1")
+        baseline_from_url = _qp1("baseline", None)
+        gwp_from_url = _qp1("gwp", None)
+        flare_from_url = _qp1("flare_eff", None)
+        vent_qp = _qp1("vent_ef", None)
+        flare_qp = _qp1("flare_ef", None)
+        price_qp = _qp1("carbon_price", None)
 
         # Seed session defaults from URL (if present) BEFORE widgets render
         if baseline_from_url in ["Venting", "Flaring"]:
