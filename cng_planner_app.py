@@ -804,7 +804,7 @@ These values update automatically as you modify inputs across different tabs.
         # Display the table with sorting capability
         st.dataframe(
             df_diag[["Input Label", "Location", "Ribbon Pills", "Diagnostic", "Other Outputs", "Values"]],
-            width="100%",
+            width="stretch",
             hide_index=True,
             height=600,
         )
@@ -2958,7 +2958,7 @@ with tabs[3]:
                     "Annual interest [$]": "{:,.0f}",
                     "Annual total [$]": "{:,.0f}",
                 }),
-                width="100%",
+                width="stretch",
                 hide_index=True,
             )
         else:
@@ -3369,7 +3369,7 @@ with tabs[3]:
     with st.expander("Cash flow (annual) — details", expanded=False):
         years_labels = ["Year −2", "Year −1"] + [f"Year {i + 1}" for i in range(n_full_years)]
         df_cf = pd.DataFrame({"Year": years_labels, "Cash flow [$]": cashflows})
-        st.dataframe(df_cf, width="100%")
+        st.dataframe(df_cf, width="stretch")
     # (Keep app_boot=True until AFTER all tabs have rendered)
 
     # ---------------------------------------
@@ -4263,7 +4263,7 @@ with tabs[5]:
         edited = st.data_editor(
             df,
             hide_index=True,
-            width="100%",
+            width="stretch",
             column_config={
                 "🗑️": st.column_config.CheckboxColumn("Delete", help="Tick to delete this row"),
             },
@@ -4435,7 +4435,7 @@ with tabs[5]:
         if st.button("Load scenarios.csv"):
             try:
                 df = pd.read_csv("scenarios.csv")
-                st.dataframe(df, width="100%")
+                st.dataframe(df, width="stretch")
             except Exception as e:
                 st.error(f"Failed to load scenarios.csv: {e}")
 
