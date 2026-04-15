@@ -1,0 +1,15 @@
+[tool.black]
+line-length = 100
+target-version = ["py39"]
+
+[tool.isort]
+profile = "black"
+line_length = 100
+known_third_party = ["streamlit", "numpy", "pandas", "matplotlib"]
+
+[tool.ruff]
+line-length = 100
+select = ["E", "F", "I"]
+ignore = ["E501"]
+target-version = "py39"
+fix = true
