@@ -804,7 +804,7 @@ These values update automatically as you modify inputs across different tabs.
         # Display the table with sorting capability
         st.dataframe(
             df_diag[["Input Label", "Location", "Ribbon Pills", "Diagnostic", "Other Outputs", "Values"]],
-            use_container_width=True,
+            width="100%",
             hide_index=True,
             height=600,
         )
@@ -2958,7 +2958,7 @@ with tabs[3]:
                     "Annual interest [$]": "{:,.0f}",
                     "Annual total [$]": "{:,.0f}",
                 }),
-                use_container_width=True,
+                width="100%",
                 hide_index=True,
             )
         else:
@@ -3369,7 +3369,7 @@ with tabs[3]:
     with st.expander("Cash flow (annual) — details", expanded=False):
         years_labels = ["Year −2", "Year −1"] + [f"Year {i + 1}" for i in range(n_full_years)]
         df_cf = pd.DataFrame({"Year": years_labels, "Cash flow [$]": cashflows})
-        st.dataframe(df_cf, use_container_width=True)
+        st.dataframe(df_cf, width="100%")
     # (Keep app_boot=True until AFTER all tabs have rendered)
 
     # ---------------------------------------
@@ -3464,14 +3464,14 @@ with tabs[4]:
             )
 
         # --- Persistence (optional): load carbon settings from URL ---
-        _qp = st.experimental_get_query_params()
-        preset_from_url = _qp.get("carbon_preset", [""])[0] == "1"
-        baseline_from_url = _qp.get("baseline", [None])[0]
-        gwp_from_url = _qp.get("gwp", [None])[0]
-        flare_from_url = _qp.get("flare_eff", [None])[0]
-        vent_qp = _qp.get("vent_ef", [None])[0]
-        flare_qp = _qp.get("flare_ef", [None])[0]
-        price_qp = _qp.get("carbon_price", [None])[0]
+        _qp = st.query_params  # dict-like; values are strings (stable API since Streamlit 1.30)
+        preset_from_url = _qp.get("carbon_preset", "") == "1"
+        baseline_from_url = _qp.get("baseline", None)
+        gwp_from_url = _qp.get("gwp", None)
+        flare_from_url = _qp.get("flare_eff", None)
+        vent_qp = _qp.get("vent_ef", None)
+        flare_qp = _qp.get("flare_ef", None)
+        price_qp = _qp.get("carbon_price", None)
 
         # Seed session defaults from URL (if present) BEFORE widgets render
         if baseline_from_url in ["Venting", "Flaring"]:
@@ -3526,15 +3526,15 @@ with tabs[4]:
             )
             if remember:
                 try:
-                    st.experimental_set_query_params(
-                        carbon_preset="1",
-                        baseline=str(st.session_state.get("baseline_default_from_url", baseline)),
-                        gwp=str(st.session_state.get("gwp_choice", "AR5 (28)")),
-                        flare_eff=str(st.session_state.get("flare_eff_pct", 98)),
-                        vent_ef=str(st.session_state.get("vent_co2e_t_per_gj", 0.0)),
-                        flare_ef=str(st.session_state.get("flare_co2_t_per_gj", 0.0)),
-                        carbon_price=str(st.session_state.get("carbon_price_per_t", 35.0)),
-                    )
+                    st.query_params.update({
+                        "carbon_preset": "1",
+                        "baseline": str(st.session_state.get("baseline_default_from_url", baseline)),
+                        "gwp": str(st.session_state.get("gwp_choice", "AR5 (28)")),
+                        "flare_eff": str(st.session_state.get("flare_eff_pct", 98)),
+                        "vent_ef": str(st.session_state.get("vent_co2e_t_per_gj", 0.0)),
+                        "flare_ef": str(st.session_state.get("flare_co2_t_per_gj", 0.0)),
+                        "carbon_price": str(st.session_state.get("carbon_price_per_t", 35.0)),
+                    })
                 except Exception:
                     pass
 
@@ -4263,7 +4263,7 @@ with tabs[5]:
         edited = st.data_editor(
             df,
             hide_index=True,
-            use_container_width=True,
+            width="100%",
             column_config={
                 "🗑️": st.column_config.CheckboxColumn("Delete", help="Tick to delete this row"),
             },
@@ -4435,7 +4435,7 @@ with tabs[5]:
         if st.button("Load scenarios.csv"):
             try:
                 df = pd.read_csv("scenarios.csv")
-                st.dataframe(df, use_container_width=True)
+                st.dataframe(df, width="100%")
             except Exception as e:
                 st.error(f"Failed to load scenarios.csv: {e}")
 
