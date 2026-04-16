@@ -3486,6 +3486,87 @@ with tabs[4]:
 
     st.divider()
 
+    # --- Waterfall chart ---
+    st.subheader("Cost Build-Up")
+
+    if not MPL_OK:
+        st.warning(
+            "Matplotlib is not available. Install matplotlib to view the cost build-up chart."
+        )
+    else:
+        if _lc_per_gj == 0.0 and _gas_cost == 0.0:
+            st.info(
+                "Visit the Infrastructure & Transport Costs tab first to populate cost data."
+            )
+        else:
+            import matplotlib.patches as mpatches
+
+            _transport_lc = float(st.session_state.get("transport_lc_per_gj", 0.0))
+            _infra_lc = _lc_per_gj - _transport_lc
+
+            segments = [
+                ("Gas Cost",        _gas_cost,    "#1E3A8A"),
+                ("Infra LC",        _infra_lc,    "#3B82F6"),
+                ("Transport LC",    _transport_lc, "#EA580C"),
+                ("Required Margin", _req_margin,  "#16A34A"),
+            ]
+
+            fig, ax = plt.subplots(figsize=(10, 2.5))
+
+            left = 0.0
+            for label, width, color in segments:
+                ax.barh(0, width, left=left, height=0.5, color=color,
+                        edgecolor="white", lw=1.5)
+                if width >= 0.20:
+                    ax.text(
+                        left + width / 2, 0, f"${width:.2f}",
+                        ha="center", va="center",
+                        color="white", fontsize=9, fontweight="bold",
+                    )
+                left += width
+
+            # Dashed sell-price line
+            ax.axvline(x=_sell_price_B, color="#1E293B", linestyle="--", lw=1.5)
+            ax.text(
+                _sell_price_B, 0.32,
+                f"Sell Price\n${_sell_price_B:.2f}/GJ",
+                ha="center", va="bottom",
+                fontsize=9, color="#1E293B", fontweight="bold",
+            )
+
+            # Carbon + other benefit extension (FR-04d)
+            benefit_extension = _carbon_ben + _other_ben
+            if benefit_extension > 0:
+                ax.barh(-0.6, benefit_extension, left=_sell_price_B,
+                        height=0.5, color="#7C3AED", edgecolor="white", lw=1.5)
+                ax.text(
+                    _sell_price_B + benefit_extension / 2, -0.6,
+                    "Carbon + Other Benefit",
+                    ha="center", va="center",
+                    color="white", fontsize=9, fontweight="bold",
+                )
+
+            ax.set_xlabel("$/GJ")
+            ax.set_yticks([])
+            ax.set_title(
+                "Gas Economics: Cost Build-Up to Sell Price",
+                fontweight="bold",
+            )
+
+            # Legend (FR-04g)
+            legend_patches = [
+                mpatches.Patch(color=c, label=l)
+                for l, _, c in segments
+            ]
+            if benefit_extension > 0:
+                legend_patches.append(
+                    mpatches.Patch(color="#7C3AED", label="Carbon + Other Benefit")
+                )
+            ax.legend(handles=legend_patches, loc="lower right", fontsize=8)
+
+            st.pyplot(fig, use_container_width=True)
+            plt.close(fig)
+
     # ---------------------------------------
 # BENEFITS TAB — Gas sales & carbon avoidance (index 4)
 # ---------------------------------------
