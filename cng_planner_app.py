@@ -3426,6 +3426,24 @@ with tabs[4]:
     st.caption(
         "Trace the full cost build-up from gas supply through to required sell price and net margin."
     )
+
+    # --- Derive and persist _B metrics (before ribbon so ribbon reads current-render values) ---
+    _lc_per_gj = float(st.session_state.get("lc_per_gj", 0.0))
+    _gas_cost = float(st.session_state.get("gas_cost_per_gj_B", 0.0))
+    _req_margin = float(st.session_state.get("required_margin_per_gj_B", 2.0))
+    _carbon_ben = float(st.session_state.get("carbon_benefit_per_gj", 0.0))
+    _other_ben = float(st.session_state.get("other_benefit_per_gj", 0.0))
+
+    _lc_per_gj_B = _gas_cost + _lc_per_gj
+    _sell_price_B = _lc_per_gj_B + _req_margin
+    _lb_per_gj_B = _sell_price_B + _carbon_ben + _other_ben
+    _margin_per_gj_B = _lb_per_gj_B - _lc_per_gj_B
+
+    st.session_state["lc_per_gj_B"] = _lc_per_gj_B
+    st.session_state["sell_price_B"] = _sell_price_B
+    st.session_state["lb_per_gj_B"] = _lb_per_gj_B
+    st.session_state["margin_per_gj_B"] = _margin_per_gj_B
+
     render_gas_economics_ribbon()
     st.divider()
 
@@ -3466,23 +3484,6 @@ with tabs[4]:
         st.caption(
             f"Contributes ${st.session_state.get('required_margin_per_gj_B', 2.0):.2f}/GJ to Sell Price_B"
         )
-
-    # --- Derive and persist _B metrics ---
-    _lc_per_gj = float(st.session_state.get("lc_per_gj", 0.0))
-    _gas_cost = float(st.session_state.get("gas_cost_per_gj_B", 0.0))
-    _req_margin = float(st.session_state.get("required_margin_per_gj_B", 2.0))
-    _carbon_ben = float(st.session_state.get("carbon_benefit_per_gj", 0.0))
-    _other_ben = float(st.session_state.get("other_benefit_per_gj", 0.0))
-
-    _lc_per_gj_B = _gas_cost + _lc_per_gj
-    _sell_price_B = _lc_per_gj_B + _req_margin
-    _lb_per_gj_B = _sell_price_B + _carbon_ben + _other_ben
-    _margin_per_gj_B = _lb_per_gj_B - _lc_per_gj_B
-
-    st.session_state["lc_per_gj_B"] = _lc_per_gj_B
-    st.session_state["sell_price_B"] = _sell_price_B
-    st.session_state["lb_per_gj_B"] = _lb_per_gj_B
-    st.session_state["margin_per_gj_B"] = _margin_per_gj_B
 
     st.divider()
 
