@@ -3568,6 +3568,156 @@ with tabs[4]:
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
 
+    # --- Breakdown tables (FR-05) ---
+    st.divider()
+
+    _transport_lc_tbl = float(st.session_state.get("transport_lc_per_gj", 0.0))
+    _infra_lc_tbl = _lc_per_gj - _transport_lc_tbl
+    _eff_daily = float(st.session_state.get(
+        "effective_daily_gj", st.session_state.get("daily_energy_gj", 0.0)
+    ))
+    _safe_sp = max(_sell_price_B, 1e-9)
+
+    # Shared header cell styles (no CSS braces needed — inline only)
+    _th_s = "style='padding:6px 8px; text-align:left; border:1px solid #cbd5e1;'"
+    _th_r_s = "style='padding:6px 8px; text-align:right; border:1px solid #cbd5e1;'"
+
+    def _cost_row(bg, label, val_gj, pct_str, bold=False, italic=False):
+        fw = "font-weight:bold; " if bold else ""
+        fi = "font-style:italic; color:#6b7280; " if italic else ""
+        sl = f"style='padding:5px 8px; border:1px solid #e2e8f0; {fw}{fi}'"
+        sr = f"style='padding:5px 8px; text-align:right; border:1px solid #e2e8f0; {fw}{fi}'"
+        return (
+            f"<tr style='background:{bg}'>"
+            f"<td {sl}>{label}</td><td {sr}>{val_gj}</td><td {sr}>{pct_str}</td>"
+            f"</tr>"
+        )
+
+    def _ben_row(bg, label, val_gj, bold=False):
+        fw = "font-weight:bold; " if bold else ""
+        sl = f"style='padding:5px 8px; border:1px solid #e2e8f0; {fw}'"
+        sr = f"style='padding:5px 8px; text-align:right; border:1px solid #e2e8f0; {fw}'"
+        return (
+            f"<tr style='background:{bg}'>"
+            f"<td {sl}>{label}</td><td {sr}>{val_gj}</td>"
+            f"</tr>"
+        )
+
+    col_cost, col_ben = st.columns([1.1, 0.9])
+
+    with col_cost:
+        st.subheader("Cost Stack")
+        _annual_note = (
+            f"Annual (@ {_eff_daily:.1f} GJ/day): "
+            f"Gas ${_gas_cost * _eff_daily * 365:,.0f} · "
+            f"Infra ${_infra_lc_tbl * _eff_daily * 365:,.0f} · "
+            f"Transport ${_transport_lc_tbl * _eff_daily * 365:,.0f} · "
+            f"Margin ${_req_margin * _eff_daily * 365:,.0f} · "
+            f"Total ${_sell_price_B * _eff_daily * 365:,.0f}"
+        )
+        _cost_html = (
+            "<table style='width:100%; border-collapse:collapse;"
+            " font-size:13px; margin-bottom:8px;'>"
+            f"<tr style='background:#1e3a8a; color:white;'>"
+            f"<th {_th_s}>Cost Item</th>"
+            f"<th {_th_r_s}>$/GJ</th>"
+            f"<th {_th_r_s}>% of Sell Price</th></tr>"
+            + _cost_row("#f8fafc", "Gas purchase cost",
+                        f"${_gas_cost:.2f}",
+                        f"{_gas_cost / _safe_sp * 100:.1f}%")
+            + _cost_row("white", "Mother station infra LC",
+                        f"${_infra_lc_tbl:.2f}",
+                        f"{_infra_lc_tbl / _safe_sp * 100:.1f}%")
+            + _cost_row("#f8fafc", "Transport (trucking) LC",
+                        f"${_transport_lc_tbl:.2f}",
+                        f"{_transport_lc_tbl / _safe_sp * 100:.1f}%")
+            + _cost_row("white", "<strong>Subtotal — LC_B</strong>",
+                        f"<strong>${_lc_per_gj_B:.2f}</strong>",
+                        f"<strong>{_lc_per_gj_B / _safe_sp * 100:.1f}%</strong>",
+                        bold=True)
+            + _cost_row("#f8fafc", "Required margin",
+                        f"${_req_margin:.2f}",
+                        f"{_req_margin / _safe_sp * 100:.1f}%")
+            + _cost_row("#eff6ff", "<strong>Sell Price_B</strong>",
+                        f"<strong>${_sell_price_B:.2f}</strong>",
+                        "<strong>100.0%</strong>",
+                        bold=True)
+            + (
+                f"<tr style='background:#f1f5f9;'><td colspan='3' style='padding:5px 8px;"
+                f" border:1px solid #e2e8f0; font-style:italic; color:#6b7280;"
+                f" font-size:12px;'>{_annual_note}</td></tr>"
+            )
+            + "</table>"
+        )
+        st.markdown(_cost_html, unsafe_allow_html=True)
+
+    with col_ben:
+        st.subheader("Benefit Stack")
+        _mar_bg = "#d1fae5" if _margin_per_gj_B >= 0 else "#fee2e2"
+        _ben_html = (
+            "<table style='width:100%; border-collapse:collapse;"
+            " font-size:13px; margin-bottom:8px;'>"
+            f"<tr style='background:#1e3a8a; color:white;'>"
+            f"<th {_th_s}>Benefit Item</th>"
+            f"<th {_th_r_s}>$/GJ</th></tr>"
+            + _ben_row("#f8fafc", "Gas sell revenue", f"${_sell_price_B:.2f}")
+            + _ben_row("white", "Carbon benefit", f"${_carbon_ben:.2f}")
+            + _ben_row("#f8fafc", "Other benefit", f"${_other_ben:.2f}")
+            + _ben_row("white", "<strong>Total LB_B</strong>",
+                       f"<strong>${_lb_per_gj_B:.2f}</strong>",
+                       bold=True)
+            + _ben_row(_mar_bg, "<strong>Net Margin_B</strong>",
+                       f"<strong>${_margin_per_gj_B:.2f}</strong>",
+                       bold=True)
+            + "</table>"
+        )
+        st.markdown(_ben_html, unsafe_allow_html=True)
+
+    # --- Comparison callout (FR-06) ---
+    _sales_gas = float(st.session_state.get("sales_gas_value_per_gj", 0.0))
+    if _sales_gas == 0.0:
+        st.info(
+            "No sell price has been set on the Benefits & Carbon tab yet. "
+            "Set a gas sell price there to compare it against the required Sell Price_B."
+        )
+    elif _sell_price_B <= _sales_gas:
+        _surplus = _sales_gas - _sell_price_B
+        st.success(
+            f"Your current gas sell price (${_sales_gas:.2f}/GJ) covers the required sell "
+            f"price of ${_sell_price_B:.2f}/GJ. Implied surplus: ${_surplus:.2f}/GJ."
+        )
+    else:
+        _shortfall = _sell_price_B - _sales_gas
+        st.warning(
+            f"Your current gas sell price (${_sales_gas:.2f}/GJ) is below the required sell "
+            f"price of ${_sell_price_B:.2f}/GJ. Shortfall: ${_shortfall:.2f}/GJ."
+        )
+
+    # --- How is this calculated? expander ---
+    with st.expander("How is this calculated?"):
+        st.markdown(
+            """
+**Step 1 — Base costs from Infrastructure & Transport Costs tab**
+- `lc_per_gj` — total levelised cost already computed (station CAPEX/OPEX + trucking)
+- `transport_lc_per_gj` — trucking-only portion of that LC
+- `infra_lc` = `lc_per_gj − transport_lc_per_gj` (station CAPEX/OPEX portion)
+
+**Step 2 — New inputs on this tab**
+- `gas_cost_per_gj_B` — gas purchase / supply cost you enter ($/GJ)
+- `required_margin_per_gj_B` — business margin target you enter ($/GJ)
+
+**Step 3 — Derived outputs**
+- `LC_B = gas_cost_per_gj_B + lc_per_gj` — full cost stack including gas supply
+- `Sell Price_B = LC_B + required_margin_per_gj_B` — minimum price to cover all costs and margin target
+- `LB_B = Sell Price_B + carbon_benefit_per_gj + other_benefit_per_gj` — full benefit stack
+- `Margin_B = LB_B − LC_B` — net margin after benefits (= required margin + carbon + other)
+
+These metrics use the `_B` suffix and are **independent** of the main ribbon pills on other tabs.
+Changing inputs here does **not** affect Levelised Cost, Levelised Benefit, or Margin shown on
+the Infrastructure & Transport Costs or Benefits & Carbon tabs.
+            """
+        )
+
     # ---------------------------------------
 # BENEFITS TAB — Gas sales & carbon avoidance (index 4)
 # ---------------------------------------
