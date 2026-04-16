@@ -29,6 +29,12 @@ except Exception:
 st.set_page_config(page_title="Virtual Pipeline Planner", layout="wide")
 # Freeze ribbon pills on first render (all tabs show 0.00 until the first rerun)
 st.session_state.setdefault("app_boot", True)
+st.session_state.setdefault("gas_cost_per_gj_B", 0.0)
+st.session_state.setdefault("required_margin_per_gj_B", 2.0)
+st.session_state.setdefault("lc_per_gj_B", 0.0)
+st.session_state.setdefault("sell_price_B", 0.0)
+st.session_state.setdefault("lb_per_gj_B", 0.0)
+st.session_state.setdefault("margin_per_gj_B", 0.0)
 
 
 from textwrap import dedent  # (keep once near here if not already imported)
@@ -446,6 +452,7 @@ tabs = st.tabs(
         "Payload & Capacity",
         "Planner",
         "Infrastructure & Transport Costs",
+        "Gas Economics",
         "Benefits & Carbon",
         "Scenarios",
     ]
