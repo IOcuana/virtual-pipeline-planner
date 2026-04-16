@@ -3382,7 +3382,7 @@ with tabs[3]:
     # ---------------------------------------
 # BENEFITS TAB — Gas sales & carbon avoidance (index 4)
 # ---------------------------------------
-with tabs[4]:
+with tabs[5]:
     st.markdown("## Benefits & Carbon")
 
     # Show zeros on the very first render; only persist margin after first rerun
@@ -3737,7 +3737,7 @@ with tabs[4]:
 # ---------------------------------------
 # Scenarios tab (index 5)
 # ---------------------------------------
-with tabs[5]:
+with tabs[6]:
     st.markdown("## Scenarios")
 
     # Freeze ribbon on first render
