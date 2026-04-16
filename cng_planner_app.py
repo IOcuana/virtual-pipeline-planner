@@ -76,6 +76,7 @@ from physics import density_kg_per_m3, mixture_hhv_J_per_kg, density_mixture_kg_
 from ui_helpers import (
     _inject_planner_expander_css,
     _inject_sidebar_expander_css,
+    _pill,
     currency_commas,
     help_flyout,
     number_commas,
@@ -3378,6 +3379,112 @@ with tabs[3]:
         df_cf = pd.DataFrame({"Year": years_labels, "Cash flow [$]": cashflows})
         st.dataframe(df_cf, width="stretch")
     # (Keep app_boot=True until AFTER all tabs have rendered)
+
+
+# ---------------------------------------
+# GAS ECONOMICS TAB — helper
+# ---------------------------------------
+def render_gas_economics_ribbon():
+    """Summary ribbon for the Gas Economics tab showing _B-suffix metrics.
+    Independent of summary_ribbon() — does not read or write non-_B keys.
+    """
+    first_run = bool(st.session_state.get("app_boot", True))
+
+    if first_run:
+        lc_b = 0.0
+        sell_b = 0.0
+        margin_b = 0.0
+        transport_lc = 0.0
+    else:
+        lc_b = float(st.session_state.get("lc_per_gj_B", 0.0))
+        sell_b = float(st.session_state.get("sell_price_B", 0.0))
+        margin_b = float(st.session_state.get("margin_per_gj_B", 0.0))
+        transport_lc = float(st.session_state.get("transport_lc_per_gj", 0.0))
+
+    mar_bg, mar_fg = ("#ecfdf5", "#065f46") if margin_b >= 0 else ("#fee2e2", "#991b1b")
+
+    html = f"""
+    <div class='vp-ribbon' style='font-size:22px; line-height:1; margin:8px 0 16px 0;'>
+      <div class='vp-row1' style='display:flex; flex-wrap:wrap;'>
+        {_pill("Levelized Cost_B", lc_b, "/GJ", "#eef2ff", "#1e3a8a")}
+        {_pill("Sell Price_B", sell_b, "/GJ", "#ecfdf5", "#065f46")}
+        {_pill("Margin_B", margin_b, "/GJ", mar_bg, mar_fg)}
+      </div>
+      <div class='vp-row2' style='display:flex; flex-wrap:wrap; margin-top:6px;'>
+        {_pill("Trucking Cost (excl. stations)", transport_lc, "/GJ", "#fff7ed", "#9a3412")}
+      </div>
+    </div>
+    """
+    st.markdown(html, unsafe_allow_html=True)
+
+
+# ---------------------------------------
+# GAS ECONOMICS TAB (index 4)
+# ---------------------------------------
+with tabs[4]:
+    st.markdown("## Gas Economics")
+    st.caption(
+        "Trace the full cost build-up from gas supply through to required sell price and net margin."
+    )
+    render_gas_economics_ribbon()
+    st.divider()
+
+    # --- Input controls ---
+    col_gas, col_margin = st.columns(2)
+
+    with col_gas:
+        st.number_input(
+            "Gas purchase / supply cost [$/GJ]",
+            key="gas_cost_per_gj_B",
+            min_value=0.0,
+            value=0.0,
+            step=0.25,
+            format="%.2f",
+            help=(
+                "The price paid to source or purchase the gas before it enters the virtual "
+                "pipeline. This is added to infrastructure and transport costs to derive the "
+                "full cost of gas delivered."
+            ),
+        )
+        st.caption(
+            f"Contributes ${st.session_state.get('gas_cost_per_gj_B', 0.0):.2f}/GJ to Sell Price_B"
+        )
+
+    with col_margin:
+        st.number_input(
+            "Required margin [$/GJ]",
+            key="required_margin_per_gj_B",
+            min_value=0.0,
+            value=2.0,
+            step=0.25,
+            format="%.2f",
+            help=(
+                "The business margin you need to earn per GJ delivered, on top of all costs "
+                "(gas supply + infrastructure + transport). The derived Sell Price covers this margin."
+            ),
+        )
+        st.caption(
+            f"Contributes ${st.session_state.get('required_margin_per_gj_B', 2.0):.2f}/GJ to Sell Price_B"
+        )
+
+    # --- Derive and persist _B metrics ---
+    _lc_per_gj = float(st.session_state.get("lc_per_gj", 0.0))
+    _gas_cost = float(st.session_state.get("gas_cost_per_gj_B", 0.0))
+    _req_margin = float(st.session_state.get("required_margin_per_gj_B", 2.0))
+    _carbon_ben = float(st.session_state.get("carbon_benefit_per_gj", 0.0))
+    _other_ben = float(st.session_state.get("other_benefit_per_gj", 0.0))
+
+    _lc_per_gj_B = _gas_cost + _lc_per_gj
+    _sell_price_B = _lc_per_gj_B + _req_margin
+    _lb_per_gj_B = _sell_price_B + _carbon_ben + _other_ben
+    _margin_per_gj_B = _lb_per_gj_B - _lc_per_gj_B
+
+    st.session_state["lc_per_gj_B"] = _lc_per_gj_B
+    st.session_state["sell_price_B"] = _sell_price_B
+    st.session_state["lb_per_gj_B"] = _lb_per_gj_B
+    st.session_state["margin_per_gj_B"] = _margin_per_gj_B
+
+    st.divider()
 
     # ---------------------------------------
 # BENEFITS TAB — Gas sales & carbon avoidance (index 4)
