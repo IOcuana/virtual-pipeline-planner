@@ -444,6 +444,22 @@ with st.sidebar:
             key="truck_util_target",
         )
 
+def _compute_lvl():
+    """Compute and persist _B metrics used by all ribbons."""
+    m = compute_levelized_metrics_for_scenario()
+    _gas = float(st.session_state.get("gas_cost_per_gj_B", 0.0))
+    _mar = float(st.session_state.get("required_margin_per_gj_B", 2.0))
+    _cb = float(st.session_state.get("carbon_benefit_per_gj", 0.0))
+    _ob = float(st.session_state.get("other_benefit_per_gj", 0.0))
+    lc_B = _gas + m["lc_per_gj"]
+    sp_B = lc_B + _mar
+    lb_B = sp_B + _cb + _ob
+    st.session_state["lc_per_gj_B"] = lc_B
+    st.session_state["sell_price_B"] = sp_B
+    st.session_state["lb_per_gj_B"] = lb_B
+    st.session_state["margin_per_gj_B"] = lb_B - lc_B
+
+
 # ---------------------------------------
 # Tabs (Instructions first)
 # ---------------------------------------
@@ -460,6 +476,7 @@ tabs = st.tabs(
     ]
 )
 
+_compute_lvl()
 
 # ---------------------------------------
 # INSTRUCTIONS (first tab)

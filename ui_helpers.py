@@ -106,11 +106,9 @@ def summary_ribbon(font_size="22px"):
         margin = 0.0
         transport_lc = 0.0
     else:
-        lc = float(st.session_state.get("lc_per_gj", 0.0))
-        lb = float(st.session_state.get("lb_per_gj", 0.0))
-        margin = lb - lc
-        # persist for other tabs when not on first run
-        st.session_state["margin_per_gj"] = margin
+        lc = float(st.session_state.get("lc_per_gj_B", 0.0))
+        lb = float(st.session_state.get("sell_price_B", 0.0))
+        margin = float(st.session_state.get("margin_per_gj_B", 0.0))
         transport_lc = float(st.session_state.get("transport_lc_per_gj", 0.0))
 
     # Colors
@@ -132,7 +130,7 @@ def summary_ribbon(font_size="22px"):
     <div class='vp-ribbon' style='font-size:{font_size}; line-height:1; margin:8px 0 16px 0;'>
       <div class='vp-row1' style='display:flex; flex-wrap:wrap;'>
         {_pill("Levelized Cost", lc, "/GJ", cost_bg, cost_fg)}
-        {_pill("Levelized Benefit", lb, "/GJ", ben_bg, ben_fg)}
+        {_pill("Sell Price", lb, "/GJ", ben_bg, ben_fg)}
         {_pill("Margin", margin, "/GJ", mar_bg, mar_fg)}
       </div>
       <div class='vp-row2' style='display:flex; flex-wrap:wrap; margin-top:6px;'>
