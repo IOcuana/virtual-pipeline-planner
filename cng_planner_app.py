@@ -35,6 +35,14 @@ st.session_state.setdefault("lc_per_gj_B", 0.0)
 st.session_state.setdefault("sell_price_B", 0.0)
 st.session_state.setdefault("lb_per_gj_B", 0.0)
 st.session_state.setdefault("margin_per_gj_B", 0.0)
+st.session_state.setdefault("app_mode", "mode_b")
+st.session_state.setdefault("gen_fleet_kwh_per_year", 0.0)
+for _i in range(1, 6):
+    st.session_state.setdefault(f"gen_{_i}_enabled", False)
+    st.session_state.setdefault(f"gen_{_i}_rated_kw", 1000.0)
+    st.session_state.setdefault(f"gen_{_i}_load_factor_pct", 80.0)
+    st.session_state.setdefault(f"gen_{_i}_efficiency_pct", 35.0)
+    st.session_state.setdefault(f"gen_{_i}_gas_lhv_mj_nm3", 38.0)
 
 
 from textwrap import dedent  # (keep once near here if not already imported)
@@ -113,10 +121,33 @@ def _current_driver_shift_cap() -> float:
     }.get(normalised, 12.0)
 
 
+def _update_mode_a():
+    """Recompute daily_energy_gj from the generator fleet for Mode A. Fleshed out in REQ-04."""
+    total_gj_day = 0.0
+    total_kwh_day = 0.0
+    for i in range(1, 6):
+        if not st.session_state.get(f"gen_{i}_enabled", False):
+            continue
+        kw = float(st.session_state.get(f"gen_{i}_rated_kw", 0.0))
+        lf = float(st.session_state.get(f"gen_{i}_load_factor_pct", 80.0)) / 100.0
+        eff = float(st.session_state.get(f"gen_{i}_efficiency_pct", 35.0)) / 100.0
+        kwh_day = kw * lf * 24.0
+        total_kwh_day += kwh_day
+        total_gj_day += (kwh_day * 3.6) / max(eff * 1000.0, 1e-9)
+    st.session_state["gen_fleet_kwh_per_year"] = total_kwh_day * 365.0
+    st.session_state["daily_energy_gj"] = total_gj_day
+
+
 with st.sidebar:
     _inject_sidebar_expander_css()
     # 1) Operating Mode & Demand (default open)
     with st.expander("Operating Mode & Demand", expanded=True):
+        app_mode = st.radio(
+            "App Mode",
+            options=["mode_a", "mode_b"],
+            format_func={"mode_a": "Mode A — Gas Generator", "mode_b": "Mode B — Known Demand"}.get,
+            key="app_mode",
+        )
         mode = st.selectbox("Mode", ["DropAndPull", "ThroughRoad"])
         st.session_state["mode"] = mode
         project_months = st.number_input(
@@ -139,12 +170,15 @@ with st.sidebar:
 
         st.session_state["hours_per_day"] = float(hours_per_day)
 
-        daily_energy_gj = number_commas(
+        daily_energy_gj = st.number_input(
             "Daily gas to transport [GJ/day]",
             key="daily_energy_gj",
+            min_value=0.0,
             value=10000.00,
-            decimals=2,
+            step=0.01,
+            format="%.2f",
             help="Energy delivered per day in gigajoules.",
+            disabled=(st.session_state.get("app_mode") == "mode_a"),
         )
         # --- NEW: Utilisation ---
         utilisation_pct = st.number_input(
