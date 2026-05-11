@@ -122,7 +122,13 @@ def _current_driver_shift_cap() -> float:
 
 
 def _update_mode_a():
-    """Recompute daily_energy_gj from the generator fleet for Mode A. Fleshed out in REQ-04."""
+    """Recompute daily_energy_gj from the enabled generator fleet for Mode A.
+
+    For each enabled generator:
+      electrical kWh/day = rated_kw * load_factor * 24 h
+      gas GJ/day        = electrical_kWh * 3.6 MJ/kWh / (efficiency * 1000 MJ/GJ)
+    Sums across fleet, then writes daily_energy_gj and gen_fleet_kwh_per_year.
+    """
     total_gj_day = 0.0
     total_kwh_day = 0.0
     for i in range(1, 6):
@@ -2210,6 +2216,74 @@ with tabs[3]:
             f"A-trailers: **${fleet_a_trailer_capex/1_000_000:.3f}M**, "
             f"B-trailers: **${fleet_b_trailer_capex/1_000_000:.3f}M**, "
             f"Dollies: **${fleet_dolly_capex/1_000_000:.3f}M**"
+        )
+
+    # ------------- Gas Generator fleet (Mode A demand source) -------------------
+    with st.expander("Gas Generators (Mode A)", expanded=False):
+        st.caption(
+            "Configure up to 5 on-site gas generators. "
+            "In Mode A the fleet gas consumption sets the virtual-pipeline daily demand."
+        )
+        _gh0, _gh1, _gh2, _gh3, _gh4 = st.columns([1, 2, 2, 2, 2])
+        _gh0.markdown("**Generator**")
+        _gh1.markdown("**Rated kW**")
+        _gh2.markdown("**Load factor %**")
+        _gh3.markdown("**Efficiency %**")
+        _gh4.markdown("**LHV [MJ/Nm³]**")
+        for _gi in range(1, 6):
+            _gc0, _gc1, _gc2, _gc3, _gc4 = st.columns([1, 2, 2, 2, 2])
+            _gc0.checkbox(
+                f"Gen {_gi}",
+                key=f"gen_{_gi}_enabled",
+                on_change=_update_mode_a,
+            )
+            _gc1.number_input(
+                f"kW [{_gi}]",
+                key=f"gen_{_gi}_rated_kw",
+                min_value=0.0,
+                value=1000.0,
+                step=50.0,
+                help=f"Generator {_gi} nameplate electrical output [kW].",
+                on_change=_update_mode_a,
+                label_visibility="collapsed",
+            )
+            _gc2.number_input(
+                f"Load % [{_gi}]",
+                key=f"gen_{_gi}_load_factor_pct",
+                min_value=0.0,
+                max_value=100.0,
+                value=80.0,
+                step=1.0,
+                help=f"Generator {_gi} average load as % of rated power.",
+                on_change=_update_mode_a,
+                label_visibility="collapsed",
+            )
+            _gc3.number_input(
+                f"Eff % [{_gi}]",
+                key=f"gen_{_gi}_efficiency_pct",
+                min_value=1.0,
+                max_value=100.0,
+                value=35.0,
+                step=0.5,
+                help=f"Generator {_gi} thermal efficiency (gas to electrical).",
+                on_change=_update_mode_a,
+                label_visibility="collapsed",
+            )
+            _gc4.number_input(
+                f"LHV [{_gi}]",
+                key=f"gen_{_gi}_gas_lhv_mj_nm3",
+                min_value=1.0,
+                value=38.0,
+                step=0.1,
+                help=f"Generator {_gi} gas lower heating value [MJ/Nm³].",
+                on_change=_update_mode_a,
+                label_visibility="collapsed",
+            )
+        st.divider()
+        _fleet_kwh = float(st.session_state.get("gen_fleet_kwh_per_year", 0.0))
+        st.caption(
+            f"Fleet electrical output: **{_fleet_kwh:,.0f} kWh/yr** "
+            f"({_fleet_kwh / 1_000.0:,.1f} MWh/yr)"
         )
 
     # ------------- Transport ops (service, fuel, drivers, insurance) -------------
