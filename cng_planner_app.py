@@ -453,8 +453,9 @@ tabs = st.tabs(
         "Payload & Capacity",
         "Planner",
         "Infrastructure & Transport Costs",
-        "Gas Economics",
         "Benefits & Carbon",
+        "Project Economics",
+        "Diesel & Grid",
         "Scenarios",
     ]
 )
@@ -3419,9 +3420,9 @@ def render_gas_economics_ribbon():
 
 
 # ---------------------------------------
-# GAS ECONOMICS TAB (index 4)
+# PROJECT ECONOMICS TAB (index 5)
 # ---------------------------------------
-with tabs[4]:
+with tabs[5]:
     st.markdown("## Gas Economics")
     st.caption(
         "Trace the full cost build-up from gas supply through to required sell price and net margin."
@@ -3721,7 +3722,7 @@ the Infrastructure & Transport Costs or Benefits & Carbon tabs.
     # ---------------------------------------
 # BENEFITS TAB — Gas sales & carbon avoidance (index 4)
 # ---------------------------------------
-with tabs[5]:
+with tabs[4]:
     st.markdown("## Benefits & Carbon")
 
     # Show zeros on the very first render; only persist margin after first rerun
@@ -4074,9 +4075,9 @@ with tabs[5]:
     )
 
 # ---------------------------------------
-# Scenarios tab (index 5)
+# Scenarios tab (index 7)
 # ---------------------------------------
-with tabs[6]:
+with tabs[7]:
     st.markdown("## Scenarios")
 
     # Freeze ribbon on first render
