@@ -212,7 +212,10 @@ with st.sidebar:
         app_mode = st.radio(
             "App Mode",
             options=["mode_a", "mode_b"],
-            format_func={"mode_a": "Mode A — Gas Generator", "mode_b": "Mode B — Known Demand"}.get,
+            format_func={
+            "mode_a": "PaaS Mode — Power Generation (derive gas from kW)",
+            "mode_b": "GaaS Mode — Gas Supply (enter GJ/day directly)",
+        }.get,
             key="app_mode",
         )
         mode = st.selectbox("Mode", ["DropAndPull", "ThroughRoad"])
@@ -2330,10 +2333,10 @@ with tabs[3]:
         )
 
     # ------------- Gas Generator fleet (Mode A demand source) -------------------
-    with st.expander("Gas Generators (Mode A)", expanded=False):
+    with st.expander("Gas Generators (PaaS Mode)", expanded=False):
         st.caption(
             "Configure up to 5 on-site gas generators. "
-            "In Mode A the fleet gas consumption sets the virtual-pipeline daily demand."
+            "In PaaS Mode the fleet gas consumption sets the virtual-pipeline daily demand."
         )
         _gh0, _gh1, _gh2, _gh3, _gh4 = st.columns([1, 2, 2, 2, 2])
         _gh0.markdown("**Generator**")
@@ -4646,7 +4649,7 @@ with tabs[6]:
 
             if _app_mode_chart == "mode_b":
                 st.caption(
-                    "Switch to Mode A (Infrastructure tab → Gas Generators) to show H2Hauler "
+                    "Switch to PaaS Mode (Infrastructure tab → Gas Generators) to show H2Hauler "
                     "Power-as-a-Service in the $/kWh panel."
                 )
     st.divider()
