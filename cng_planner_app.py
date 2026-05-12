@@ -58,6 +58,35 @@ st.session_state.setdefault("bess_diesel_rte_pct", 90.0)
 st.session_state.setdefault("bess_diesel_cycles_per_day", 1.0)
 st.session_state.setdefault("bess_diesel_noload_l_hr", 22.0)
 st.session_state.setdefault("bess_diesel_marginal_l_kwh", 0.232)
+st.session_state.setdefault("bess_diesel_saving_pct", 0.0)
+st.session_state.setdefault("elec_avg_load_kw", 1150.0)
+st.session_state.setdefault("elec_hours_per_day", 24.0)
+st.session_state.setdefault("elec_days_per_year", 365.0)
+st.session_state.setdefault("annual_kwh_comparison", 0.0)
+st.session_state.setdefault("dsl_gen_count", 1)
+st.session_state.setdefault("dsl_gen_rated_kw", 1600.0)
+st.session_state.setdefault("dsl_fuel_rate_l_per_kwh", 0.265)
+st.session_state.setdefault("dsl_fuel_price_aud_l", 2.00)
+st.session_state.setdefault("dsl_gen_capex_unit", 380_000.0)
+st.session_state.setdefault("dsl_gen_install", 45_000.0)
+st.session_state.setdefault("dsl_fuel_storage_capex", 78_000.0)
+st.session_state.setdefault("dsl_other_capex", 0.0)
+st.session_state.setdefault("dsl_contingency_pct", 10.0)
+st.session_state.setdefault("dsl_asset_life_yr", 5.0)
+st.session_state.setdefault("dsl_finance_rate_pct", 6.0)
+st.session_state.setdefault("diesel_cost_per_kwh", 0.0)
+st.session_state.setdefault("diesel_cost_per_gj", 0.0)
+st.session_state.setdefault("grid_connection_capex", 0.0)
+st.session_state.setdefault("grid_regulator_fee", 0.0)
+st.session_state.setdefault("grid_other_capex", 0.0)
+st.session_state.setdefault("grid_asset_life_yr", 20.0)
+st.session_state.setdefault("grid_finance_rate_pct", 6.0)
+st.session_state.setdefault("grid_contingency_pct", 10.0)
+st.session_state.setdefault("grid_energy_tariff_aud_kwh", 0.23)
+st.session_state.setdefault("grid_demand_charge_aud_kva_mo", 0.0)
+st.session_state.setdefault("grid_contracted_demand_kva", 0.0)
+st.session_state.setdefault("grid_other_charges_yr", 0.0)
+st.session_state.setdefault("grid_cost_per_kwh", 0.0)
 for _i in range(1, 6):
     st.session_state.setdefault(f"gen_{_i}_enabled", False)
     st.session_state.setdefault(f"gen_{_i}_rated_kw", 1000.0)
@@ -4443,6 +4472,315 @@ with tabs[4]:
     f"(Total benefit: ${total_benefit_per_gj:,.2f}/GJ). "
     "These values feed Levelized Benefit and Margin."
     )
+
+# ---------------------------------------
+# DIESEL & GRID COMPARISON TAB (index 6)
+# ---------------------------------------
+with tabs[6]:
+    st.markdown("## Diesel & Grid Power Comparison")
+    st.caption(
+        "Compare H2Hauler gas-powered generation against diesel generation and grid connection "
+        "as alternative energy supply options."
+    )
+
+    # --- Electrical Load Reference ---
+    st.subheader("Electrical Load Reference")
+    st.caption(
+        "Shared annual kWh used by both Diesel and Grid sections for $/kWh calculations."
+    )
+    _elc1, _elc2, _elc3 = st.columns(3)
+    with _elc1:
+        _elec_avg_kw = st.number_input(
+            "Average electrical load [kW]",
+            key="elec_avg_load_kw", min_value=0.0, value=1150.0, step=50.0,
+        )
+    with _elc2:
+        _elec_hpd = st.number_input(
+            "Operating hours per day",
+            key="elec_hours_per_day", min_value=0.0, max_value=24.0, value=24.0, step=0.5,
+        )
+    with _elc3:
+        _elec_dpy = st.number_input(
+            "Operating days per year",
+            key="elec_days_per_year", min_value=1.0, max_value=365.0, value=365.0, step=1.0,
+        )
+    _annual_kwh_ref = _elec_avg_kw * _elec_hpd * _elec_dpy
+    st.info(f"Annual kWh reference: {_annual_kwh_ref:,.0f} kWh/year")
+    st.session_state["annual_kwh_comparison"] = _annual_kwh_ref
+
+    st.divider()
+    _dsl_col, _grid_col = st.columns(2)
+
+    # =========================================================
+    # Diesel Generation Section
+    # =========================================================
+    with _dsl_col:
+        st.subheader("Diesel Generation Baseline")
+
+        _dsl_gen_count = st.number_input(
+            "Number of generator sets", key="dsl_gen_count",
+            min_value=1, value=1, step=1,
+        )
+        st.number_input(
+            "Generator rated capacity [kW]", key="dsl_gen_rated_kw",
+            min_value=0.0, value=1600.0, step=100.0,
+        )
+        _dsl_fuel_rate = st.number_input(
+            "Fuel consumption at avg load [L/kWh]", key="dsl_fuel_rate_l_per_kwh",
+            min_value=0.0, value=0.265, step=0.005, format="%.3f",
+        )
+        _dsl_fuel_price = st.number_input(
+            "Diesel delivered price [AUD/L]", key="dsl_fuel_price_aud_l",
+            min_value=0.0, value=2.00, step=0.05,
+        )
+
+        st.markdown("**Diesel CAPEX**")
+        currency_commas("Generator set purchase (per unit) [AUD]", key="dsl_gen_capex_unit", value=380_000)
+        currency_commas("Generator installation [AUD]", key="dsl_gen_install", value=45_000)
+        currency_commas("Fuel storage (tank + pump) [AUD]", key="dsl_fuel_storage_capex", value=78_000)
+        currency_commas("Other diesel CAPEX [AUD]", key="dsl_other_capex", value=0)
+        _dsl_contingency = st.number_input(
+            "Contingency [%]", key="dsl_contingency_pct",
+            min_value=0.0, max_value=100.0, value=10.0, step=1.0,
+        )
+        _dsl_life = st.number_input(
+            "Asset life [years]", key="dsl_asset_life_yr",
+            min_value=1.0, value=5.0, step=1.0,
+        )
+        _dsl_rate_pct = st.number_input(
+            "Finance rate for CRF [%]", key="dsl_finance_rate_pct",
+            min_value=0.0, value=6.0, step=0.5,
+        )
+
+        # BESS diesel section (REQ-06.2)
+        with st.expander("BESS (Battery Storage — Diesel Scenario)", expanded=False):
+            _dbc1, _dbc2 = st.columns(2)
+            with _dbc1:
+                currency_commas("BESS CAPEX (diesel scenario) [AUD]", key="bess_diesel_capex", value=0)
+                st.number_input(
+                    "BESS usable capacity [kWh]", key="bess_diesel_usable_kwh",
+                    min_value=0.0, value=0.0, step=50.0,
+                )
+                st.number_input(
+                    "Round-trip efficiency [%]", key="bess_diesel_rte_pct",
+                    min_value=50.0, max_value=100.0, value=90.0, step=1.0,
+                )
+                st.number_input(
+                    "Cycles per day", key="bess_diesel_cycles_per_day",
+                    min_value=0.5, max_value=10.0, value=1.0, step=0.5,
+                )
+            with _dbc2:
+                st.number_input(
+                    "No-load diesel rate (per gen) [L/hr]", key="bess_diesel_noload_l_hr",
+                    min_value=0.0, value=22.0, step=1.0,
+                )
+                st.number_input(
+                    "Marginal diesel rate [L/kWh]", key="bess_diesel_marginal_l_kwh",
+                    min_value=0.0, value=0.232, step=0.01, format="%.3f",
+                )
+
+            _bdb_usable = float(st.session_state.get("bess_diesel_usable_kwh", 0.0))
+            _bdb_rte = float(st.session_state.get("bess_diesel_rte_pct", 90.0)) / 100.0
+            _bdb_cycles = float(st.session_state.get("bess_diesel_cycles_per_day", 1.0))
+            _bdb_noload = float(st.session_state.get("bess_diesel_noload_l_hr", 22.0))
+            _bdb_marginal = float(st.session_state.get("bess_diesel_marginal_l_kwh", 0.232))
+
+            if _bdb_usable > 0 and _bdb_marginal > 0:
+                _bdb_deliverable = _bdb_usable * _bdb_rte * _bdb_cycles
+                _dsl_saved_l = _bdb_deliverable * _bdb_marginal
+                _avg_kw_dsl = _elec_avg_kw
+                _total_dsl_daily_l = (
+                    (_bdb_noload * _dsl_gen_count + _bdb_marginal * _avg_kw_dsl) * _elec_hpd
+                )
+                _raw_dsl_saving = _dsl_saved_l / max(_total_dsl_daily_l, 1e-9) * 100.0
+                _dsl_cap = _raw_dsl_saving > 30.0
+                _bess_dsl_saving = min(_raw_dsl_saving, 30.0)
+            else:
+                _bess_dsl_saving = 0.0
+                _dsl_cap = False
+
+            st.session_state["bess_diesel_saving_pct"] = _bess_dsl_saving
+            st.caption(f"BESS diesel saving: **{_bess_dsl_saving:.1f}%**")
+            if _dsl_cap:
+                st.caption("BESS saving capped at 30% maximum")
+
+        # Diesel cost calculations
+        _dsl_gen_unit_capex = float(st.session_state.get("dsl_gen_capex_unit", 380_000.0))
+        _dsl_install_cost = float(st.session_state.get("dsl_gen_install", 45_000.0))
+        _dsl_bess_capex = float(st.session_state.get("bess_diesel_capex", 0.0))
+        _dsl_fuel_storage = float(st.session_state.get("dsl_fuel_storage_capex", 78_000.0))
+        _dsl_other_cap = float(st.session_state.get("dsl_other_capex", 0.0))
+        _dsl_contingency_f = float(st.session_state.get("dsl_contingency_pct", 10.0))
+        _dsl_life_f = float(st.session_state.get("dsl_asset_life_yr", 5.0))
+        _dsl_rate_f = float(st.session_state.get("dsl_finance_rate_pct", 6.0)) / 100.0
+
+        _total_dsl_capex = (
+            _dsl_gen_unit_capex * _dsl_gen_count + _dsl_install_cost
+            + _dsl_bess_capex + _dsl_fuel_storage + _dsl_other_cap
+        ) * (1.0 + _dsl_contingency_f / 100.0)
+        _dsl_crf = capital_recovery_factor(_dsl_rate_f, _dsl_life_f)
+        _annual_dsl_amort = _total_dsl_capex * _dsl_crf
+
+        _bess_dsl_saving_f = float(st.session_state.get("bess_diesel_saving_pct", 0.0))
+        _annual_fuel_cost = (
+            _annual_kwh_ref * _dsl_fuel_rate * _dsl_fuel_price * (1.0 - _bess_dsl_saving_f / 100.0)
+        )
+        _annual_dsl_cost = _annual_dsl_amort + _annual_fuel_cost
+        _diesel_cost_per_kwh = _annual_dsl_cost / max(_annual_kwh_ref, 1e-9)
+        _diesel_cost_per_gj = _diesel_cost_per_kwh / 0.0036
+
+        st.session_state["diesel_cost_per_kwh"] = _diesel_cost_per_kwh
+        st.session_state["diesel_cost_per_gj"] = _diesel_cost_per_gj
+
+        st.metric("Annual diesel cost [AUD/yr]", f"${_annual_dsl_cost:,.0f}")
+        st.metric("Diesel cost [$/kWh]", f"${_diesel_cost_per_kwh:.3f}")
+        st.metric("Diesel cost [$/GJ equiv.]", f"${_diesel_cost_per_gj:.2f}")
+        st.caption(
+            f"CAPEX: ${_total_dsl_capex:,.0f} · CRF: {_dsl_crf:.4f} · "
+            f"Annual amort: ${_annual_dsl_amort:,.0f} · Fuel: ${_annual_fuel_cost:,.0f}/yr"
+        )
+
+    # =========================================================
+    # Grid Connection Section
+    # =========================================================
+    with _grid_col:
+        st.subheader("Grid Power Baseline")
+
+        st.markdown("**Grid CAPEX**")
+        currency_commas("Grid connection infrastructure [AUD]", key="grid_connection_capex", value=0)
+        currency_commas("Distribution network regulator fee [AUD]", key="grid_regulator_fee", value=0)
+        currency_commas("Other grid CAPEX [AUD]", key="grid_other_capex", value=0)
+        _grid_contingency = st.number_input(
+            "Contingency [%]", key="grid_contingency_pct",
+            min_value=0.0, max_value=100.0, value=10.0, step=1.0,
+        )
+        _grid_life = st.number_input(
+            "Asset life [years]", key="grid_asset_life_yr",
+            min_value=1.0, value=20.0, step=1.0,
+        )
+        _grid_rate_pct = st.number_input(
+            "Finance rate for CRF [%]", key="grid_finance_rate_pct",
+            min_value=0.0, value=6.0, step=0.5,
+        )
+
+        st.markdown("**Grid Tariff**")
+        _grid_energy_tariff = st.number_input(
+            "Energy tariff [AUD/kWh]", key="grid_energy_tariff_aud_kwh",
+            min_value=0.0, value=0.23, step=0.01, format="%.3f",
+        )
+        st.number_input(
+            "Network/demand charge [AUD/kVA/month]", key="grid_demand_charge_aud_kva_mo",
+            min_value=0.0, value=0.0, step=1.0,
+        )
+        st.number_input(
+            "Contracted demand [kVA]", key="grid_contracted_demand_kva",
+            min_value=0.0, value=0.0, step=50.0,
+        )
+        currency_commas("Other annual charges [AUD/yr]", key="grid_other_charges_yr", value=0)
+
+        # Grid cost calculations
+        _grid_conn = float(st.session_state.get("grid_connection_capex", 0.0))
+        _grid_reg = float(st.session_state.get("grid_regulator_fee", 0.0))
+        _grid_other_cap = float(st.session_state.get("grid_other_capex", 0.0))
+        _grid_contingency_f = float(st.session_state.get("grid_contingency_pct", 10.0))
+        _grid_life_f = float(st.session_state.get("grid_asset_life_yr", 20.0))
+        _grid_rate_f = float(st.session_state.get("grid_finance_rate_pct", 6.0)) / 100.0
+
+        _total_grid_capex = (
+            _grid_conn + _grid_reg + _grid_other_cap
+        ) * (1.0 + _grid_contingency_f / 100.0)
+        _grid_crf = capital_recovery_factor(_grid_rate_f, _grid_life_f)
+        _annual_grid_capex = _total_grid_capex * _grid_crf
+
+        _grid_tariff_f = float(st.session_state.get("grid_energy_tariff_aud_kwh", 0.23))
+        _grid_demand_f = float(st.session_state.get("grid_demand_charge_aud_kva_mo", 0.0))
+        _grid_kva_f = float(st.session_state.get("grid_contracted_demand_kva", 0.0))
+        _grid_other_yr = float(st.session_state.get("grid_other_charges_yr", 0.0))
+
+        _annual_energy_cost = _annual_kwh_ref * _grid_tariff_f
+        _annual_demand_cost = _grid_demand_f * _grid_kva_f * 12.0
+        _annual_grid_cost = _annual_grid_capex + _annual_energy_cost + _annual_demand_cost + _grid_other_yr
+        _grid_cost_per_kwh = _annual_grid_cost / max(_annual_kwh_ref, 1e-9)
+
+        st.session_state["grid_cost_per_kwh"] = _grid_cost_per_kwh
+
+        st.metric("Annual grid cost [AUD/yr]", f"${_annual_grid_cost:,.0f}")
+        st.metric("Grid cost [$/kWh]", f"${_grid_cost_per_kwh:.3f}")
+        st.caption(
+            f"CAPEX: ${_total_grid_capex:,.0f} · CRF: {_grid_crf:.4f} · "
+            f"Annual amort: ${_annual_grid_capex:,.0f} · Energy: ${_annual_energy_cost:,.0f}/yr · "
+            f"Demand: ${_annual_demand_cost:,.0f}/yr"
+        )
+
+    # =========================================================
+    # Comparison Bar Chart
+    # =========================================================
+    st.divider()
+    st.subheader("Cost Comparison")
+
+    if not MPL_OK:
+        st.warning("Matplotlib is not available — install matplotlib to view the comparison chart.")
+    else:
+        _h2_sell_b = float(st.session_state.get("sell_price_B", 0.0))
+        _h2_paas = float(st.session_state.get("paas_cost_per_kwh", 0.0))
+        _dsl_kwh = float(st.session_state.get("diesel_cost_per_kwh", 0.0))
+        _dsl_gj = float(st.session_state.get("diesel_cost_per_gj", 0.0))
+        _grid_kwh = float(st.session_state.get("grid_cost_per_kwh", 0.0))
+        _app_mode_chart = st.session_state.get("app_mode", "mode_b")
+
+        import matplotlib.patches as mpatches
+
+        _fig7, (_ax_gj, _ax_kwh) = plt.subplots(1, 2, figsize=(12, 4))
+
+        # Left panel — $/GJ
+        _gj_labels = ["H2Hauler\nGas-as-a-Service", "Diesel\n(GJ equiv.)"]
+        _gj_values = [_h2_sell_b, _dsl_gj]
+        _gj_colors = ["#1E3A8A", "#DC2626"]
+        _bars_gj = _ax_gj.bar(_gj_labels, _gj_values, color=_gj_colors, edgecolor="white", width=0.5)
+        for _bar, _val in zip(_bars_gj, _gj_values):
+            if _val > 0:
+                _ax_gj.text(
+                    _bar.get_x() + _bar.get_width() / 2, _bar.get_height() + max(_gj_values) * 0.01,
+                    f"${_val:.2f}", ha="center", va="bottom", fontsize=10, fontweight="bold",
+                )
+        _ax_gj.set_ylabel("$/GJ")
+        _ax_gj.set_title("Cost Comparison [$/GJ]")
+        _ax_gj.set_ylim(bottom=0)
+
+        # Right panel — $/kWh
+        if _app_mode_chart == "mode_a":
+            _kwh_labels = ["H2Hauler\nPower-as-a-Service", "Diesel\n[$/kWh]", "Grid\n[$/kWh]"]
+            _kwh_values = [_h2_paas, _dsl_kwh, _grid_kwh]
+            _kwh_colors = ["#1E3A8A", "#DC2626", "#D97706"]
+        else:
+            _kwh_labels = ["H2Hauler\n(N/A Mode B)", "Diesel\n[$/kWh]", "Grid\n[$/kWh]"]
+            _kwh_values = [0.0, _dsl_kwh, _grid_kwh]
+            _kwh_colors = ["#94A3B8", "#DC2626", "#D97706"]
+        _bars_kwh = _ax_kwh.bar(_kwh_labels, _kwh_values, color=_kwh_colors, edgecolor="white", width=0.5)
+        for _bar, _val, _lbl in zip(_bars_kwh, _kwh_values, _kwh_labels):
+            if "N/A" in _lbl:
+                _ax_kwh.text(
+                    _bar.get_x() + _bar.get_width() / 2, max(_kwh_values) * 0.03,
+                    "N/A\n(Mode B)", ha="center", va="bottom", fontsize=9, color="#475569",
+                )
+            elif _val > 0:
+                _ax_kwh.text(
+                    _bar.get_x() + _bar.get_width() / 2, _val + max(_kwh_values) * 0.01,
+                    f"${_val:.3f}", ha="center", va="bottom", fontsize=10, fontweight="bold",
+                )
+        _ax_kwh.set_ylabel("$/kWh")
+        _ax_kwh.set_title("Cost Comparison [$/kWh]")
+        _ax_kwh.set_ylim(bottom=0)
+
+        plt.tight_layout()
+        st.pyplot(_fig7, use_container_width=True)
+        plt.close(_fig7)
+
+        if _app_mode_chart == "mode_b":
+            st.caption(
+                "Switch to Mode A (Infrastructure tab → Gas Generators) to show H2Hauler "
+                "Power-as-a-Service in the $/kWh panel."
+            )
 
 # ---------------------------------------
 # Scenarios tab (index 7)
