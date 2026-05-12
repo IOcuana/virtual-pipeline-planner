@@ -1349,66 +1349,60 @@ with tabs[1]:
         st.session_state["last_gas_type"] = gas_type
         st.session_state["last_hv_key"] = hv_key
 
-        hv_col1, hv_col2 = st.columns([3, 1])
-        with hv_col2:
+        def _reset_hv():
+            st.session_state["HV_J_per_kg"] = hv_default
 
-            def _reset_hv():
-                # Always reset back to the current "default" (pure gas or mixture)
-                st.session_state["HV_J_per_kg"] = hv_default
+        st.number_input(
+            "Selected heating value [J/kg] (auto)",
+            min_value=0.0,
+            value=float(st.session_state.get("HV_J_per_kg", hv_default)),
+            step=1000.0,
+            format="%.0f",
+            key="HV_J_per_kg",
+        )
+        st.button("Reset", on_click=_reset_hv, use_container_width=True)
 
-            st.button("Reset", on_click=_reset_hv)
+        # --- Densities display (moved here per v14 Section 12) ---
+        # Compute densities at PW and Pmin using current inputs
+        P_abs_bar_loc = st.session_state["phys_PW"] + 1.01325
+        Pmin_abs_bar_loc = Pmin_bar_g + 1.01325
+        P_Pa_loc, Pmin_Pa_loc = P_abs_bar_loc * 1e5, Pmin_abs_bar_loc * 1e5
+        T_K_loc = st.session_state["phys_T"] + 273.15
 
-        with hv_col1:
-            st.number_input(
-                "Selected heating value [J/kg] (auto)",
-                min_value=0.0,
-                value=float(st.session_state.get("HV_J_per_kg", hv_default)),
-                step=1000.0,
-                format="%.0f",
-                key="HV_J_per_kg",
-            )
-
-            # --- Densities display (moved here per v14 Section 12) ---
-            # Compute densities at PW and Pmin using current inputs
-            P_abs_bar_loc = st.session_state["phys_PW"] + 1.01325
-            Pmin_abs_bar_loc = Pmin_bar_g + 1.01325
-            P_Pa_loc, Pmin_Pa_loc = P_abs_bar_loc * 1e5, Pmin_abs_bar_loc * 1e5
-            T_K_loc = st.session_state["phys_T"] + 273.15
-
-            if gas_type == "Custom CNG mixture":
-                mixture_spec_loc = st.session_state.get("cng_mixture_molfractions", {})
-                rho_full_loc = density_mixture_kg_per_m3(T_K_loc, P_Pa_loc, mixture_spec_loc)
-                rho_min_loc = density_mixture_kg_per_m3(T_K_loc, Pmin_Pa_loc, mixture_spec_loc)
+        if gas_type == "Custom CNG mixture":
+            mixture_spec_loc = st.session_state.get("cng_mixture_molfractions", {})
+            rho_full_loc = density_mixture_kg_per_m3(T_K_loc, P_Pa_loc, mixture_spec_loc)
+            rho_min_loc = density_mixture_kg_per_m3(T_K_loc, Pmin_Pa_loc, mixture_spec_loc)
+        else:
+            if gas_type == "Hydrogen":
+                gas_label_loc = "Hydrogen"
+            elif gas_type == "Ammonia (NH₃, compressed)":
+                gas_label_loc = "Ammonia"
             else:
-                if gas_type == "Hydrogen":
-                    gas_label_loc = "Hydrogen"
-                elif gas_type == "Ammonia (NH₃, compressed)":
-                    gas_label_loc = "Ammonia"
-                else:
-                    gas_label_loc = "Methane"
-                rho_full_loc = density_kg_per_m3(T_K_loc, P_Pa_loc, gas_label_loc)
-                rho_min_loc = density_kg_per_m3(T_K_loc, Pmin_Pa_loc, gas_label_loc)
+                gas_label_loc = "Methane"
+            rho_full_loc = density_kg_per_m3(T_K_loc, P_Pa_loc, gas_label_loc)
+            rho_min_loc = density_kg_per_m3(T_K_loc, Pmin_Pa_loc, gas_label_loc)
 
-            coolprop_tag = (
-                "<span style='font-style:italic; color:#666;'> (CoolProp)</span>"
-                if COOLPROP_OK
-                else "<span style='font-style:italic; color:#666;'> (ideal gas)</span>"
-            )
+        coolprop_tag = (
+            "<span style='font-style:italic; color:#666;'> (CoolProp)</span>"
+            if COOLPROP_OK
+            else "<span style='font-style:italic; color:#666;'> (ideal gas)</span>"
+        )
 
-            st.markdown(
-                f"""<div style='font-size:1.25rem; line-height:1.25; margin-top:0.25rem;'>
-                <b>Densities —</b><br>
-                ρ(P<sub>W</sub>): {rho_full_loc:.2f} [kg/m³]<br>
-                ρ(P<sub>min</sub>): {rho_min_loc:.2f} [kg/m³]{coolprop_tag}
-                </div>""",
-                unsafe_allow_html=True,
-            )
-            st.caption(
-                "Note: Densities use CoolProp real-gas equations when available. These models are "
-                "generally accurate over typical CNG cylinder pressures (hundreds of bar), but at very "
-                "high pressures or unusual conditions you should cross-check against supplier data or "
-                "REFPROP/experimental values for safety-critical design."
-            )
+        st.markdown(
+            f"""<div style='font-size:1.25rem; line-height:1.25; margin-top:0.25rem;'>
+            <b>Densities —</b><br>
+            ρ(P<sub>W</sub>): {rho_full_loc:.2f} [kg/m³]<br>
+            ρ(P<sub>min</sub>): {rho_min_loc:.2f} [kg/m³]{coolprop_tag}
+            </div>""",
+            unsafe_allow_html=True,
+        )
+        st.caption(
+            "Note: Densities use CoolProp real-gas equations when available. These models are "
+            "generally accurate over typical CNG cylinder pressures (hundreds of bar), but at very "
+            "high pressures or unusual conditions you should cross-check against supplier data or "
+            "REFPROP/experimental values for safety-critical design."
+        )
 
     # RIGHT: volumes
     with colp2:
