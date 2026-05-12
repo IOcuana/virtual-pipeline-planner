@@ -4842,7 +4842,7 @@ with tabs[6]:
 # Scenarios tab (index 7)
 # ---------------------------------------
 with tabs[7]:
-    st.markdown("## Scenarios")
+    st.markdown("## Scenarios & Sensitivity Analysis")
 
     # Freeze ribbon on first render
     if bool(st.session_state.get("app_boot", True)):
@@ -4886,6 +4886,11 @@ with tabs[7]:
         # Latest $/GJ if already computed in this session:
         "lc_per_gj": st.session_state.get("lc_per_gj", None),
         "lb_per_gj": st.session_state.get("lb_per_gj", None),
+        "app_mode":            st.session_state.get("app_mode", "mode_b"),
+        "gen_fleet_capex":     st.session_state.get("gen_fleet_capex", 0.0),
+        "gen_fleet_opex_year": st.session_state.get("gen_fleet_opex_year", 0.0),
+        "paas_cost_per_kwh":   st.session_state.get("paas_cost_per_kwh", 0.0),
+        "bess_gas_saving_pct": st.session_state.get("bess_gas_saving_pct", 0.0),
     }
 
     c_left, c_right = st.columns(2)
