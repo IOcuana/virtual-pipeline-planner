@@ -3917,27 +3917,15 @@ with tabs[5]:
                 fontweight="bold",
             )
 
-            # Legend (FR-04g)
-            legend_patches = [
-                mpatches.Patch(color=c, label=l)
-                for l, _, c in segments
-            ]
-            if benefit_extension > 0:
-                legend_patches.append(
-                    mpatches.Patch(color="#7C3AED", label="Carbon + Other Benefit")
-                )
-            ax.legend(
-                handles=legend_patches,
-                loc="upper center",
-                bbox_to_anchor=(0.5, -0.15),
-                ncol=3,
-                fontsize=8,
-                frameon=True,
-            )
-            fig.subplots_adjust(bottom=0.28)
+            ax.legend().set_visible(False)
 
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
+
+            _caption = "🟦 Gas Cost · 🟦 Infra LC · 🟧 Transport LC · 🟩 Required Margin"
+            if benefit_extension > 0:
+                _caption += " · 🟪 Carbon + Other Benefit"
+            st.caption(_caption)
 
     # --- Breakdown tables (FR-05) ---
     st.divider()
