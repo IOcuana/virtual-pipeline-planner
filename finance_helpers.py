@@ -186,11 +186,13 @@ def compute_levelized_metrics_for_scenario(
     dollies_per_combo = int(DOLLIES_PER_COMBO.get(combo, 0))
     total_dollies = int(math.ceil(combos_in_circ * dollies_per_combo))
 
+    bess_gas_capex = _get_float("bess_gas_capex", 0.0)
     capex_total_all = (
         active_trucks * truck_capex_unit
         + (a_trailers * a_trailer_capex_unit + b_trailers * b_trailer_capex_unit + total_dollies * dolly_capex_unit)
         + ms_capex
         + ds_capex
+        + bess_gas_capex
     )
 
     if st.session_state.get("maint_basis_trk", "$/km") == "$/km":

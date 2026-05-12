@@ -44,6 +44,20 @@ st.session_state.setdefault("top_floor_pct", 60.0)
 st.session_state.setdefault("paas_cost_per_kwh", 0.0)
 st.session_state.setdefault("fixed_lc_per_gj", 0.0)
 st.session_state.setdefault("variable_lc_per_gj", 0.0)
+st.session_state.setdefault("bess_gas_capex", 0.0)
+st.session_state.setdefault("bess_usable_kwh", 0.0)
+st.session_state.setdefault("bess_rte_pct", 90.0)
+st.session_state.setdefault("bess_cycles_per_day", 1.0)
+st.session_state.setdefault("bess_peak_demand_kw", 0.0)
+st.session_state.setdefault("bess_noload_gas_nm3_hr", 0.0)
+st.session_state.setdefault("bess_marginal_gas_nm3_kwh", 0.0)
+st.session_state.setdefault("bess_gas_saving_pct", 0.0)
+st.session_state.setdefault("bess_diesel_capex", 0.0)
+st.session_state.setdefault("bess_diesel_usable_kwh", 0.0)
+st.session_state.setdefault("bess_diesel_rte_pct", 90.0)
+st.session_state.setdefault("bess_diesel_cycles_per_day", 1.0)
+st.session_state.setdefault("bess_diesel_noload_l_hr", 22.0)
+st.session_state.setdefault("bess_diesel_marginal_l_kwh", 0.232)
 for _i in range(1, 6):
     st.session_state.setdefault(f"gen_{_i}_enabled", False)
     st.session_state.setdefault(f"gen_{_i}_rated_kw", 1000.0)
@@ -131,12 +145,13 @@ def _current_driver_shift_cap() -> float:
 def _update_mode_a():
     """Recompute daily_energy_gj from the enabled generator fleet for Mode A.
 
-    For each enabled generator:
-      electrical kWh/day = rated_kw * load_factor * 24 h
-      gas GJ/day        = electrical_kWh * 3.6 MJ/kWh / (efficiency * 1000 MJ/GJ)
-    Sums across fleet, then writes daily_energy_gj and gen_fleet_kwh_per_year.
+    Applies BESS gas saving after summing raw generator consumption.
+    Writes daily_energy_gj and gen_fleet_kwh_per_year to session_state.
     """
-    total_gj_day = 0.0
+    if st.session_state.get("app_mode") == "mode_b":
+        return
+    hours_pd = float(st.session_state.get("hours_per_day", 24.0))
+    raw_gjpd = 0.0
     total_kwh_day = 0.0
     for i in range(1, 6):
         if not st.session_state.get(f"gen_{i}_enabled", False):
@@ -144,11 +159,16 @@ def _update_mode_a():
         kw = float(st.session_state.get(f"gen_{i}_rated_kw", 0.0))
         lf = float(st.session_state.get(f"gen_{i}_load_factor_pct", 80.0)) / 100.0
         eff = float(st.session_state.get(f"gen_{i}_efficiency_pct", 35.0)) / 100.0
-        kwh_day = kw * lf * 24.0
-        total_kwh_day += kwh_day
-        total_gj_day += (kwh_day * 3.6) / max(eff * 1000.0, 1e-9)
+        heat_rate_kj_kwh = 3600.0 / max(eff, 1e-6)
+        gjph = kw * lf * heat_rate_kj_kwh / 1_000_000.0
+        raw_gjpd += gjph * hours_pd
+        total_kwh_day += kw * lf * hours_pd
+    bess_saving = float(st.session_state.get("bess_gas_saving_pct", 0.0))
+    adjusted_gjpd = raw_gjpd * (1.0 - bess_saving / 100.0)
+    if adjusted_gjpd < 0.001 and raw_gjpd > 0:
+        adjusted_gjpd = 0.001
     st.session_state["gen_fleet_kwh_per_year"] = total_kwh_day * 365.0
-    st.session_state["daily_energy_gj"] = total_gj_day
+    st.session_state["daily_energy_gj"] = adjusted_gjpd
 
 
 with st.sidebar:
@@ -2292,6 +2312,83 @@ with tabs[3]:
             f"Fleet electrical output: **{_fleet_kwh:,.0f} kWh/yr** "
             f"({_fleet_kwh / 1_000.0:,.1f} MWh/yr)"
         )
+
+    # ------------- BESS (Battery Energy Storage System) -------------------
+    with st.expander("BESS (Battery Energy Storage System)", expanded=False):
+        st.caption(
+            "Battery storage that reduces gas generator fuel consumption via peak-shaving. "
+            "CAPEX is included in the fleet capital recovery calculation."
+        )
+        _bc1, _bc2 = st.columns(2)
+        with _bc1:
+            currency_commas("BESS supply & install CAPEX [AUD]", key="bess_gas_capex", value=0)
+            st.number_input(
+                "BESS usable capacity [kWh]",
+                key="bess_usable_kwh", min_value=0.0, value=0.0, step=50.0,
+                help="Net usable kWh after depth-of-discharge limit.",
+            )
+            st.number_input(
+                "Round-trip efficiency [%]",
+                key="bess_rte_pct", min_value=50.0, max_value=100.0, value=90.0, step=1.0,
+                help="AC-AC round-trip efficiency of the BESS.",
+            )
+            st.number_input(
+                "Cycles per day",
+                key="bess_cycles_per_day", min_value=0.5, max_value=10.0, value=1.0, step=0.5,
+                help="Number of full charge/discharge cycles per day.",
+            )
+        with _bc2:
+            st.number_input(
+                "Peak electrical demand [kW]",
+                key="bess_peak_demand_kw", min_value=0.0, value=0.0, step=50.0,
+                help="Peak power draw the BESS must cover during peak-shaving.",
+            )
+            st.number_input(
+                "No-load gas rate (per gen) [Nm³/hr]",
+                key="bess_noload_gas_nm3_hr", min_value=0.0, value=0.0, step=1.0,
+                help="Gas consumed per generator at zero electrical output.",
+            )
+            st.number_input(
+                "Marginal gas rate [Nm³/kWh]",
+                key="bess_marginal_gas_nm3_kwh", min_value=0.0, value=0.0, step=0.01,
+                help="Additional gas per kWh of electrical output.",
+            )
+
+        # BESS gas saving calculation
+        _bess_usable = float(st.session_state.get("bess_usable_kwh", 0.0))
+        _bess_rte = float(st.session_state.get("bess_rte_pct", 90.0)) / 100.0
+        _bess_cycles = float(st.session_state.get("bess_cycles_per_day", 1.0))
+        _bess_noload = float(st.session_state.get("bess_noload_gas_nm3_hr", 0.0))
+        _bess_marginal = float(st.session_state.get("bess_marginal_gas_nm3_kwh", 0.0))
+        _bess_hours_pd = float(st.session_state.get("hours_per_day", 24.0))
+        _n_gen_enabled = sum(
+            1 for _gi in range(1, 6)
+            if st.session_state.get(f"gen_{_gi}_enabled", False)
+        )
+        _total_avg_kw = sum(
+            float(st.session_state.get(f"gen_{_gi}_rated_kw", 0.0))
+            * float(st.session_state.get(f"gen_{_gi}_load_factor_pct", 80.0)) / 100.0
+            for _gi in range(1, 6)
+            if st.session_state.get(f"gen_{_gi}_enabled", False)
+        )
+
+        if _bess_usable > 0 and _bess_marginal > 0:
+            _bess_deliverable = _bess_usable * _bess_rte * _bess_cycles
+            _gas_saved_nm3 = _bess_deliverable * _bess_marginal
+            _total_daily_nm3 = (
+                (_bess_noload * _n_gen_enabled + _bess_marginal * _total_avg_kw) * _bess_hours_pd
+            )
+            _raw_saving_pct = _gas_saved_nm3 / max(_total_daily_nm3, 1e-9) * 100.0
+            _capped = _raw_saving_pct > 30.0
+            _bess_saving_pct = min(_raw_saving_pct, 30.0)
+        else:
+            _bess_saving_pct = 0.0
+            _capped = False
+
+        st.session_state["bess_gas_saving_pct"] = _bess_saving_pct
+        st.caption(f"BESS gas saving: **{_bess_saving_pct:.1f}%** of daily generator consumption")
+        if _capped:
+            st.caption("BESS saving capped at 30% maximum")
 
     # ------------- Transport ops (service, fuel, drivers, insurance) -------------
     with cB:
