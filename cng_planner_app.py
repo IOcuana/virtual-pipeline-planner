@@ -3929,12 +3929,12 @@ with tabs[5]:
             ax.legend(
                 handles=legend_patches,
                 loc="upper center",
-                bbox_to_anchor=(0.5, -0.12),
+                bbox_to_anchor=(0.5, -0.15),
                 ncol=3,
                 fontsize=8,
                 frameon=True,
             )
-            fig.subplots_adjust(bottom=0.22)
+            fig.subplots_adjust(bottom=0.28)
 
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
