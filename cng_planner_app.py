@@ -3753,7 +3753,8 @@ def render_project_economics_ribbon():
       <div class='vp-row1' style='display:flex; flex-wrap:wrap;'>
         {_pill("Levelized Cost", lc_b, "/GJ", "#eef2ff", "#1e3a8a")}
         {_pill("Sell Price", sell_b, "/GJ", "#ecfdf5", "#065f46")}
-        {_pill("Margin", margin_b, "/GJ", mar_bg, mar_fg)}
+        {_pill("Net Margin", margin_b, "/GJ", mar_bg, mar_fg,
+               tip="Net Margin = Required Business Margin + Carbon Credit [$/GJ] + Other Benefits [$/GJ].")}
       </div>
       <div class='vp-row2' style='display:flex; flex-wrap:wrap; margin-top:6px;'>
         {_pill("Trucking Cost (excl. stations)", transport_lc, "/GJ", "#fff7ed", "#9a3412")}

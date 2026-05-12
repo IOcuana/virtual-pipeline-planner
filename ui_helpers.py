@@ -131,7 +131,9 @@ def summary_ribbon(font_size="22px"):
       <div class='vp-row1' style='display:flex; flex-wrap:wrap;'>
         {_pill("Levelized Cost", lc, "/GJ", cost_bg, cost_fg)}
         {_pill("Sell Price", lb, "/GJ", ben_bg, ben_fg)}
-        {_pill("Margin", margin, "/GJ", mar_bg, mar_fg)}
+        {_pill("Net Margin", margin, "/GJ", mar_bg, mar_fg,
+               tip="Net Margin = Required Business Margin + Carbon Credit [$/GJ] + "
+                   "Other Benefits [$/GJ]. Set values on the Benefits &amp; Carbon tab.")}
       </div>
       <div class='vp-row2' style='display:flex; flex-wrap:wrap; margin-top:6px;'>
         {_pill("Trucking Cost (excl. stations)", transport_lc, "/GJ", trk_bg, trk_fg, tip=trucking_tip)}
@@ -139,4 +141,8 @@ def summary_ribbon(font_size="22px"):
     </div>
     """
     st.markdown(html, unsafe_allow_html=True)
+    st.caption(
+        "Net Margin = Required Business Margin + Carbon Credit + Other Benefits. "
+        "Sell Price = Levelized Cost + Net Margin."
+    )
 
