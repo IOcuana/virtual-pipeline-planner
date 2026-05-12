@@ -709,8 +709,8 @@ These values update automatically as you modify inputs across different tabs.
             ("Mode", "Sidebar", "Levelized Cost, Trucking Cost", "Affects driver scheduling logic (DropAndPull vs ThroughRoad)", "Active trucks, Drivers per truck, Sets per day"),
             ("Project duration [months]", "Sidebar", "Levelized Cost", "Used in CRF calculation for annuitization", "NPV calculations, All project totals"),
             ("Operating hours per day [h]", "Sidebar", "Levelized Cost, Trucking Cost", "Affects bay availability and truck utilization", "Bay utilization, Truck utilization"),
-            ("Daily gas to transport [GJ/day]", "Sidebar", "Levelized Cost, Levelized Benefit, Margin, Trucking Cost", "Primary throughput driver for all calculations", "Fleet size, Bay counts, Annual revenue, All $/GJ metrics"),
-            ("Utilisation [% of plan]", "Sidebar", "Levelized Cost, Levelized Benefit, Margin", "Adjusts effective throughput for revenue/cost calculations", "Effective daily GJ, Annual revenue, Annual benefit"),
+            ("Daily gas to transport [GJ/day]", "Sidebar", "Levelized Cost, Sell Price, Margin, Trucking Cost", "Primary throughput driver for all calculations", "Fleet size, Bay counts, Annual revenue, All $/GJ metrics"),
+            ("Utilisation [% of plan]", "Sidebar", "Levelized Cost, Sell Price, Margin", "Adjusts effective throughput for revenue/cost calculations", "Effective daily GJ, Annual revenue, Annual benefit"),
             ("Conversion reference", "Sidebar", "No contribution", "Display-only conversion between Normal/Standard conditions", "Volumetric conversions (Nm³, Sm³, ft³)"),
             ("Distance Mother→Daughter [km]", "Sidebar", "Levelized Cost, Trucking Cost", "Drives trucking time, fuel consumption, fleet size", "Truck km/day, Fuel cost, Active trucks, Sets per day"),
             ("Speed [km/h]", "Sidebar", "Levelized Cost, Trucking Cost", "Affects cycle time and fleet requirements", "Cycle time, Active trucks, Sets per day"),
@@ -728,8 +728,8 @@ These values update automatically as you modify inputs across different tabs.
             ("Truck utilisation target", "Sidebar", "Levelized Cost, Trucking Cost", "Drives fleet sizing (inverse relationship)", "Active trucks, Truck utilization %"),
             
             # ===== PAYLOAD & CAPACITY TAB =====
-            ("Gas Type", "Payload & Capacity tab", "Levelized Cost, Levelized Benefit, Margin, Trucking Cost", "Affects density, energy content, safety factors", "Capacity (GJ), Capacity (kg), All mass/energy calculations"),
-            ("Heating Value basis", "Payload & Capacity tab", "Levelized Cost, Levelized Benefit, Margin, Trucking Cost", "LHV vs HHV affects energy calculations", "Capacity (GJ), Energy conversions"),
+            ("Gas Type", "Payload & Capacity tab", "Levelized Cost, Sell Price, Margin, Trucking Cost", "Affects density, energy content, safety factors", "Capacity (GJ), Capacity (kg), All mass/energy calculations"),
+            ("Heating Value basis", "Payload & Capacity tab", "Levelized Cost, Sell Price, Margin, Trucking Cost", "LHV vs HHV affects energy calculations", "Capacity (GJ), Energy conversions"),
             ("Working Pressure (barₐ)", "Payload & Capacity tab", "Levelized Cost, Trucking Cost", "Defines usable gas mass per trailer", "Usable capacity (GJ), Usable capacity (kg)"),
             ("Min Pressure (barₐ)", "Payload & Capacity tab", "Levelized Cost, Trucking Cost", "Lower bound for usable capacity", "Usable capacity (GJ), Usable capacity (kg)"),
             ("Gas Temperature (°C)", "Payload & Capacity tab", "Levelized Cost, Trucking Cost", "Affects gas density and capacity", "Density, Capacity calculations"),
@@ -779,14 +779,39 @@ These values update automatically as you modify inputs across different tabs.
             ("Finance Plan (rate, NPER)", "Infrastructure & Transport Costs tab", "Levelized Cost", "Interest rate and loan term for CRF", "Capital Recovery Factor, Annuitized CAPEX"),
             
             # ===== BENEFITS & CARBON TAB =====
-            ("Revenue - sales gas [$/GJ delivered]", "Benefits & Carbon tab", "Levelized Benefit, Margin", "Gas sales revenue", "Total gas revenue [$/yr], Levelized Benefit"),
-            ("Baseline", "Benefits & Carbon tab", "Levelized Benefit, Margin", "Reference emissions case", "Baseline CO₂-e (t/yr), Avoided CO₂-e"),
-            ("GWP basis", "Benefits & Carbon tab", "Levelized Benefit, Margin", "Methane warming potential (GWP100 or GWP20)", "Baseline emissions, Avoided emissions"),
-            ("Flare efficiency [%]", "Benefits & Carbon tab", "Levelized Benefit, Margin", "Combustion efficiency for flaring", "Flaring EF [tCO₂/GJ], Baseline emissions"),
-            ("Carbon price [$/tCO₂-e]", "Benefits & Carbon tab", "Levelized Benefit, Margin", "Value of avoided emissions", "Carbon avoidance [$/yr], Levelized Benefit"),
-            ("Include transport emissions", "Benefits & Carbon tab", "Levelized Benefit, Margin", "Accounts for trucking CO₂", "Project CO₂-e (t/yr), Net avoided emissions"),
-            ("Diesel EF [kgCO₂-e/L]", "Benefits & Carbon tab", "Levelized Benefit, Margin", "Diesel emission factor", "Transport emissions (t/yr)"),
-            ("Other benefit [$/year]", "Benefits & Carbon tab", "Levelized Benefit, Margin", "Additional benefits not captured elsewhere", "Total annual benefit [$/yr]"),
+            ("Revenue - sales gas [$/GJ delivered]", "Benefits & Carbon tab", "Margin", "Gas sales revenue", "Total gas revenue [$/yr], Benefits & Carbon ribbon"),
+            ("Baseline", "Benefits & Carbon tab", "Sell Price, Margin", "Reference emissions case", "Baseline CO₂-e (t/yr), Avoided CO₂-e"),
+            ("GWP basis", "Benefits & Carbon tab", "Sell Price, Margin", "Methane warming potential (GWP100 or GWP20)", "Baseline emissions, Avoided emissions"),
+            ("Flare efficiency [%]", "Benefits & Carbon tab", "Sell Price, Margin", "Combustion efficiency for flaring", "Flaring EF [tCO₂/GJ], Baseline emissions"),
+            ("Carbon price [$/tCO₂-e]", "Benefits & Carbon tab", "Margin", "Value of avoided emissions", "Carbon avoidance [$/yr], Benefits & Carbon ribbon"),
+            ("Include transport emissions", "Benefits & Carbon tab", "Sell Price, Margin", "Accounts for trucking CO₂", "Project CO₂-e (t/yr), Net avoided emissions"),
+            ("Diesel EF [kgCO₂-e/L]", "Benefits & Carbon tab", "Sell Price, Margin", "Diesel emission factor", "Transport emissions (t/yr)"),
+            ("Other benefit [$/year]", "Benefits & Carbon tab", "Margin", "Additional benefits not captured elsewhere", "Total annual benefit [$/yr]"),
+
+            # ===== APPLICATION MODE =====
+            ("Application Mode", "Sidebar", "Sell Price, Margin", "Mode A: GJ/day back-calculated from generators; Mode B: user-entered", "daily_energy_gj, gen_fleet_kwh_per_year"),
+
+            # ===== GAS GENERATOR INPUTS (Infrastructure tab) =====
+            ("Gen 1-5 Enabled", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "Toggles generator in fleet sum (Mode A)", "daily_energy_gj, gen_fleet_kwh_per_year"),
+            ("Gen 1-5 Rated kW", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "Generator nameplate electrical output (Mode A)", "raw_gjpd, gen_fleet_kwh_per_year"),
+            ("Gen 1-5 Load Factor [%]", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "Average load fraction (Mode A)", "raw_gjpd, gen_fleet_kwh_per_year"),
+            ("Gen 1-5 Efficiency [%]", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "Thermal efficiency → heat rate → GJ/hr (Mode A)", "raw_gjpd"),
+            ("Gen 1-5 Gas LHV [MJ/Nm³]", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "Auto-populated from Payload & Capacity gas type (Mode A)", "heat_rate, raw_gjpd"),
+
+            # ===== BESS INPUTS (Infrastructure tab) =====
+            ("BESS Supply & Install CAPEX [AUD]", "Infrastructure & Transport Costs tab", "Levelized Cost, Sell Price, Margin", "Added to capex_total_all → annuitized into LC", "capex_total_all, lc_per_gj_B"),
+            ("BESS Usable Capacity [kWh]", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "BESS deliverable energy → gas saving %", "bess_gas_saving_pct, daily_energy_gj"),
+            ("BESS Round-Trip Efficiency [%]", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "Multiplier on deliverable kWh", "bess_deliverable_kwh"),
+            ("BESS Cycles Per Day", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "Scales daily deliverable kWh", "bess_deliverable_kwh"),
+            ("BESS Marginal Gas Rate [Nm³/kWh]", "Infrastructure & Transport Costs tab", "Sell Price, Margin", "Converts deliverable kWh to Nm³ saved", "gas_saved_nm3, bess_gas_saving_pct"),
+
+            # ===== DIESEL & GRID INPUTS (Diesel & Grid Comparison tab) =====
+            ("Electrical Load Reference [kW]", "Diesel & Grid Comparison tab", "No contribution", "Shared annual kWh denominator for $/kWh metrics", "annual_kwh_comparison"),
+            ("Diesel fuel rate [L/kWh]", "Diesel & Grid Comparison tab", "No contribution", "Fuel consumption → annual diesel fuel cost", "diesel_cost_per_kwh, diesel_cost_per_gj"),
+            ("Diesel fuel price [AUD/L]", "Diesel & Grid Comparison tab", "No contribution", "Fuel cost per litre → annual fuel cost", "diesel_cost_per_kwh, diesel_cost_per_gj"),
+            ("Diesel CAPEX (generators + install + storage)", "Diesel & Grid Comparison tab", "No contribution", "CRF-amortised over asset life → annual capex charge", "diesel_cost_per_kwh"),
+            ("Grid energy tariff [AUD/kWh]", "Diesel & Grid Comparison tab", "No contribution", "Energy purchase cost → annual energy charge", "grid_cost_per_kwh"),
+            ("Grid connection CAPEX", "Diesel & Grid Comparison tab", "No contribution", "CRF-amortised over asset life → annual capex charge", "grid_cost_per_kwh"),
         ]
 
 
@@ -909,6 +934,37 @@ These values update automatically as you modify inputs across different tabs.
                 if label == "Diesel EF [kgCO₂-e/L]": return _fmt(ss.get("diesel_kgco2e_per_L"))
                 if label == "Other benefit [$/year]": return _fmt(ss.get("other_benefit_year"))
 
+                # Application Mode
+                if label == "Application Mode": return _fmt(ss.get("app_mode", "mode_b"))
+
+                # Gas Generator inputs
+                if label == "Gen 1-5 Enabled":
+                    enabled = [i for i in range(1, 6) if ss.get(f"gen_{i}_enabled", False)]
+                    return f"Enabled: {enabled}" if enabled else "None enabled"
+                if label == "Gen 1-5 Rated kW":
+                    return ", ".join(str(ss.get(f"gen_{i}_rated_kw", 0)) for i in range(1, 6) if ss.get(f"gen_{i}_enabled", False)) or "—"
+                if label == "Gen 1-5 Load Factor [%]":
+                    return ", ".join(str(ss.get(f"gen_{i}_load_factor_pct", 0)) for i in range(1, 6) if ss.get(f"gen_{i}_enabled", False)) or "—"
+                if label == "Gen 1-5 Efficiency [%]":
+                    return ", ".join(str(ss.get(f"gen_{i}_efficiency_pct", 0)) for i in range(1, 6) if ss.get(f"gen_{i}_enabled", False)) or "—"
+                if label == "Gen 1-5 Gas LHV [MJ/Nm³]":
+                    return ", ".join(str(ss.get(f"gen_{i}_gas_lhv_mj_nm3", 0)) for i in range(1, 6) if ss.get(f"gen_{i}_enabled", False)) or "—"
+
+                # BESS inputs
+                if label == "BESS Supply & Install CAPEX [AUD]": return _fmt(ss.get("bess_gas_capex"))
+                if label == "BESS Usable Capacity [kWh]": return _fmt(ss.get("bess_usable_kwh"))
+                if label == "BESS Round-Trip Efficiency [%]": return _fmt(ss.get("bess_rte_pct"))
+                if label == "BESS Cycles Per Day": return _fmt(ss.get("bess_cycles_per_day"))
+                if label == "BESS Marginal Gas Rate [Nm³/kWh]": return _fmt(ss.get("bess_marginal_gas_nm3_kwh"))
+
+                # Diesel & Grid inputs
+                if label == "Electrical Load Reference [kW]": return _fmt(ss.get("elec_avg_load_kw"))
+                if label == "Diesel fuel rate [L/kWh]": return _fmt(ss.get("dsl_fuel_rate_l_per_kwh"))
+                if label == "Diesel fuel price [AUD/L]": return _fmt(ss.get("dsl_fuel_price_aud_l"))
+                if label == "Diesel CAPEX (generators + install + storage)": return _fmt(ss.get("dsl_gen_capex_unit"))
+                if label == "Grid energy tariff [AUD/kWh]": return _fmt(ss.get("grid_energy_tariff_aud_kwh"))
+                if label == "Grid connection CAPEX": return _fmt(ss.get("grid_connection_capex"))
+
                 return "—"
             except Exception:
                 return "—"
@@ -939,13 +995,13 @@ These values update automatically as you modify inputs across different tabs.
         
         total_inputs = len(df_diag)
         lc_inputs = len(df_diag[df_diag["Ribbon Pills"].str.contains("Levelized Cost", na=False)])
-        lb_inputs = len(df_diag[df_diag["Ribbon Pills"].str.contains("Levelized Benefit", na=False)])
+        lb_inputs = len(df_diag[df_diag["Ribbon Pills"].str.contains("Sell Price", na=False)])
         tc_inputs = len(df_diag[df_diag["Ribbon Pills"].str.contains("Trucking Cost", na=False)])
         no_contrib = len(df_diag[df_diag["Ribbon Pills"] == "No contribution"])
         
         col1.metric("Total Inputs", total_inputs)
         col2.metric("→ Levelized Cost", lc_inputs)
-        col3.metric("→ Levelized Benefit", lb_inputs)
+        col3.metric("→ Sell Price", lb_inputs)
         col4.metric("→ Trucking Cost", tc_inputs)
         
         st.caption(f"**{no_contrib}** inputs have no direct contribution to ribbon pills (typically display-only settings).")
@@ -956,7 +1012,7 @@ These values update automatically as you modify inputs across different tabs.
     st.download_button(
         label="📥 Download Diagnostics as CSV",
         data=csv,
-        file_name="input_diagnostics_v15_8.csv",
+        file_name="input_diagnostics_v16.csv",
         mime="text/csv",
     )
 
