@@ -273,6 +273,41 @@ def compute_levelized_metrics_for_scenario(
     st.session_state["margin_per_gj"] = float(margin_per_gj)
     st.session_state["transport_lc_per_gj"] = float(transport_lc_per_gj)
 
+    # Fixed/variable LC split for REQ-05 tariff structures (excl. gas supply cost)
+    _trk_is_variable = (st.session_state.get("maint_basis_trk", "$/km") == "$/km")
+    _trl_is_variable = (st.session_state.get("maint_basis_trl", "$/km") == "$/km")
+    _fixed_yr = (
+        annuitized_capex_year
+        + ms_opex_year + ms_energy_cost_year + ds_opex_year
+        + driver_cost_year
+        + other_opex_year
+        + (0.0 if _trk_is_variable else trk_maint_year)
+        + (0.0 if _trl_is_variable else trl_maint_year)
+    )
+    _variable_yr = (
+        fuel_cost_year
+        + (trk_maint_year if _trk_is_variable else 0.0)
+        + (trl_maint_year if _trl_is_variable else 0.0)
+    )
+    st.session_state["fixed_lc_per_gj"] = float(_fixed_yr / denom_gj_year)
+    st.session_state["variable_lc_per_gj"] = float(_variable_yr / denom_gj_year)
+
+    # _B metrics (full economics including gas supply)
+    gas_cost_per_gj_b = _get_float("gas_cost_per_gj_B", 0.0)
+    req_margin_b = _get_float("required_margin_per_gj_B", 2.0)
+    carbon_benefit_pgj = _get_float("carbon_benefit_per_gj", 0.0)
+    other_benefit_pgj = _get_float("other_benefit_per_gj", 0.0)
+
+    lc_per_gj_b = gas_cost_per_gj_b + lc_per_gj
+    sell_price_b = lc_per_gj_b + req_margin_b
+    lb_per_gj_b = sell_price_b + carbon_benefit_pgj + other_benefit_pgj
+    margin_per_gj_b = lb_per_gj_b - lc_per_gj_b
+
+    st.session_state["lc_per_gj_B"] = float(lc_per_gj_b)
+    st.session_state["sell_price_B"] = float(sell_price_b)
+    st.session_state["lb_per_gj_B"] = float(lb_per_gj_b)
+    st.session_state["margin_per_gj_B"] = float(margin_per_gj_b)
+
     return {
         "lc_per_gj": float(lc_per_gj),
         "lb_per_gj": float(lb_per_gj),

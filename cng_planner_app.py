@@ -37,6 +37,13 @@ st.session_state.setdefault("lb_per_gj_B", 0.0)
 st.session_state.setdefault("margin_per_gj_B", 0.0)
 st.session_state.setdefault("app_mode", "mode_b")
 st.session_state.setdefault("gen_fleet_kwh_per_year", 0.0)
+st.session_state.setdefault("margin_input_mode", "Absolute [$/GJ]")
+st.session_state.setdefault("contractor_margin_pct", 20.0)
+st.session_state.setdefault("mob_fee_pct", 15.0)
+st.session_state.setdefault("top_floor_pct", 60.0)
+st.session_state.setdefault("paas_cost_per_kwh", 0.0)
+st.session_state.setdefault("fixed_lc_per_gj", 0.0)
+st.session_state.setdefault("variable_lc_per_gj", 0.0)
 for _i in range(1, 6):
     st.session_state.setdefault(f"gen_{_i}_enabled", False)
     st.session_state.setdefault(f"gen_{_i}_rated_kw", 1000.0)
@@ -3510,8 +3517,8 @@ with tabs[3]:
 # ---------------------------------------
 # GAS ECONOMICS TAB — helper
 # ---------------------------------------
-def render_gas_economics_ribbon():
-    """Summary ribbon for the Gas Economics tab showing _B-suffix metrics.
+def render_project_economics_ribbon():
+    """Summary ribbon for the Project Economics tab showing _B-suffix metrics.
     Independent of summary_ribbon() — does not read or write non-_B keys.
     """
     first_run = bool(st.session_state.get("app_boot", True))
@@ -3532,9 +3539,9 @@ def render_gas_economics_ribbon():
     html = f"""
     <div class='vp-ribbon' style='font-size:22px; line-height:1; margin:8px 0 16px 0;'>
       <div class='vp-row1' style='display:flex; flex-wrap:wrap;'>
-        {_pill("Levelized Cost_B", lc_b, "/GJ", "#eef2ff", "#1e3a8a")}
-        {_pill("Sell Price_B", sell_b, "/GJ", "#ecfdf5", "#065f46")}
-        {_pill("Margin_B", margin_b, "/GJ", mar_bg, mar_fg)}
+        {_pill("Levelized Cost", lc_b, "/GJ", "#eef2ff", "#1e3a8a")}
+        {_pill("Sell Price", sell_b, "/GJ", "#ecfdf5", "#065f46")}
+        {_pill("Margin", margin_b, "/GJ", mar_bg, mar_fg)}
       </div>
       <div class='vp-row2' style='display:flex; flex-wrap:wrap; margin-top:6px;'>
         {_pill("Trucking Cost (excl. stations)", transport_lc, "/GJ", "#fff7ed", "#9a3412")}
@@ -3548,7 +3555,7 @@ def render_gas_economics_ribbon():
 # PROJECT ECONOMICS TAB (index 5)
 # ---------------------------------------
 with tabs[5]:
-    st.markdown("## Gas Economics")
+    st.markdown("## Project Economics")
     st.caption(
         "Trace the full cost build-up from gas supply through to required sell price and net margin."
     )
@@ -3570,7 +3577,7 @@ with tabs[5]:
     st.session_state["lb_per_gj_B"] = _lb_per_gj_B
     st.session_state["margin_per_gj_B"] = _margin_per_gj_B
 
-    render_gas_economics_ribbon()
+    render_project_economics_ribbon()
     st.divider()
 
     # --- Input controls ---
@@ -3591,25 +3598,45 @@ with tabs[5]:
             ),
         )
         st.caption(
-            f"Contributes ${st.session_state.get('gas_cost_per_gj_B', 0.0):.2f}/GJ to Sell Price_B"
+            f"Contributes ${st.session_state.get('gas_cost_per_gj_B', 0.0):.2f}/GJ to Sell Price"
         )
 
     with col_margin:
-        st.number_input(
-            "Required margin [$/GJ]",
-            key="required_margin_per_gj_B",
-            min_value=0.0,
-            value=2.0,
-            step=0.25,
-            format="%.2f",
-            help=(
-                "The business margin you need to earn per GJ delivered, on top of all costs "
-                "(gas supply + infrastructure + transport). The derived Sell Price covers this margin."
-            ),
+        _margin_mode = st.radio(
+            "Margin input mode",
+            ["Absolute [$/GJ]", "Percentage [%]"],
+            key="margin_input_mode",
+            horizontal=True,
         )
-        st.caption(
-            f"Contributes ${st.session_state.get('required_margin_per_gj_B', 2.0):.2f}/GJ to Sell Price_B"
-        )
+        if _margin_mode == "Absolute [$/GJ]":
+            st.number_input(
+                "Required margin [$/GJ]",
+                key="required_margin_per_gj_B",
+                min_value=0.0,
+                value=2.0,
+                step=0.25,
+                format="%.2f",
+                help=(
+                    "Business margin on top of all costs (gas supply + infrastructure + transport)."
+                ),
+            )
+        else:
+            _contractor_pct = st.number_input(
+                "Contractor margin [%]",
+                key="contractor_margin_pct",
+                min_value=0.0,
+                max_value=100.0,
+                value=20.0,
+                step=1.0,
+                help=(
+                    "Applied as: margin $/GJ = Levelized Cost × (margin% / 100). "
+                    "Consistent with Wellcamp spreadsheet method."
+                ),
+            )
+            _lc_b_for_pct = float(st.session_state.get("lc_per_gj_B", 0.0))
+            _derived_margin = _lc_b_for_pct * (_contractor_pct / 100.0)
+            st.session_state["required_margin_per_gj_B"] = _derived_margin
+            st.caption(f"Derived margin: ${_derived_margin:.2f}/GJ")
 
     st.divider()
 
@@ -3676,7 +3703,7 @@ with tabs[5]:
             ax.set_xlabel("$/GJ")
             ax.set_yticks([])
             ax.set_title(
-                "Gas Economics: Cost Build-Up to Sell Price",
+                "Project Economics: Cost Build-Up to Sell Price",
                 fontweight="bold",
             )
 
@@ -3764,7 +3791,7 @@ with tabs[5]:
             + _cost_row("#f8fafc", "Required margin",
                         f"${_req_margin:.2f}",
                         f"{_req_margin / _safe_sp * 100:.1f}%")
-            + _cost_row("#eff6ff", "<strong>Sell Price_B</strong>",
+            + _cost_row("#eff6ff", "<strong>Sell Price</strong>",
                         f"<strong>${_sell_price_B:.2f}</strong>",
                         "<strong>100.0%</strong>",
                         bold=True)
@@ -3792,7 +3819,7 @@ with tabs[5]:
             + _ben_row("white", "<strong>Total LB_B</strong>",
                        f"<strong>${_lb_per_gj_B:.2f}</strong>",
                        bold=True)
-            + _ben_row(_mar_bg, "<strong>Net Margin_B</strong>",
+            + _ben_row(_mar_bg, "<strong>Net Margin</strong>",
                        f"<strong>${_margin_per_gj_B:.2f}</strong>",
                        bold=True)
             + "</table>"
@@ -3804,7 +3831,7 @@ with tabs[5]:
     if _sales_gas == 0.0:
         st.info(
             "No sell price has been set on the Benefits & Carbon tab yet. "
-            "Set a gas sell price there to compare it against the required Sell Price_B."
+            "Set a gas sell price there to compare it against the required Sell Price."
         )
     elif _sell_price_B <= _sales_gas:
         _surplus = _sales_gas - _sell_price_B
@@ -3818,6 +3845,127 @@ with tabs[5]:
             f"Your current gas sell price (${_sales_gas:.2f}/GJ) is below the required sell "
             f"price of ${_sell_price_B:.2f}/GJ. Shortfall: ${_shortfall:.2f}/GJ."
         )
+
+    # --- Mode-dependent summary section ---
+    st.divider()
+    _app_mode_t = st.session_state.get("app_mode", "mode_b")
+    _eff_daily_t = float(st.session_state.get(
+        "effective_daily_gj", st.session_state.get("daily_energy_gj", 0.0)
+    ))
+    _annual_gj_t = _eff_daily_t * 365.0
+    _sell_b_t = float(st.session_state.get("sell_price_B", 0.0))
+    _lc_b_t = float(st.session_state.get("lc_per_gj_B", 0.0))
+    _req_margin_t = float(st.session_state.get("required_margin_per_gj_B", 2.0))
+    _proj_months_t = float(st.session_state.get("project_months", 60.0))
+
+    if _app_mode_t == "mode_b":
+        st.subheader("Gas-as-a-Service Tariff Structures")
+        _col_ti, _col_tv = st.columns(2)
+        with _col_ti:
+            _campaign_days = _proj_months_t * (365.0 / 12.0)
+            st.number_input(
+                "Mobilisation fee [% of total cost]",
+                key="mob_fee_pct", min_value=0.0, max_value=100.0,
+                value=15.0, step=1.0,
+            )
+            st.number_input(
+                "Take-or-Pay floor [% of base GJ]",
+                key="top_floor_pct", min_value=0.0, max_value=100.0,
+                value=60.0, step=1.0,
+            )
+        with _col_tv:
+            st.metric("Campaign duration", f"{_campaign_days:,.0f} days")
+            st.metric("Annual GJ delivered", f"{_annual_gj_t:,.0f} GJ")
+
+        # Fixed / variable cost split (from finance_helpers via session_state)
+        _fixed_pgj = float(st.session_state.get("fixed_lc_per_gj", 0.0))
+        _variable_pgj = float(st.session_state.get("variable_lc_per_gj", 0.0))
+        _gas_pgj = float(st.session_state.get("gas_cost_per_gj_B", 0.0))
+        _mob_pct_t = float(st.session_state.get("mob_fee_pct", 15.0))
+        _top_pct_t = float(st.session_state.get("top_floor_pct", 60.0))
+
+        # Allocate margin proportionally between fixed and variable
+        _total_cost_excl_m = max(_lc_b_t, 1e-9)
+        _frac_fixed = _fixed_pgj / _total_cost_excl_m
+        _frac_var = 1.0 - _frac_fixed
+        _fixed_incl_m_pgj = _fixed_pgj + _req_margin_t * _frac_fixed
+        _var_incl_m_pgj = (_variable_pgj + _gas_pgj) + _req_margin_t * _frac_var
+
+        _total_cost_incl_m = _sell_b_t * max(_annual_gj_t, 1e-9)
+        _fixed_cost_incl_m = _fixed_incl_m_pgj * max(_annual_gj_t, 1e-9)
+        _var_cost_incl_m = _var_incl_m_pgj * max(_annual_gj_t, 1e-9)
+
+        # Option 1 — Flat Day Rate
+        _opt1_day = _total_cost_incl_m / max(_campaign_days, 1)
+        _opt1_gj = _sell_b_t
+
+        # Option 2 — Two-Part Tariff
+        _opt2_a_day = _fixed_cost_incl_m / max(_campaign_days, 1)
+        _opt2_b_gj = _var_incl_m_pgj
+        _opt2_gj = (_opt2_a_day * _campaign_days + _opt2_b_gj * _annual_gj_t) / max(_annual_gj_t, 1e-9)
+
+        # Option 3 — Mob + Day Rate
+        _mob_fee_t = _total_cost_incl_m * (_mob_pct_t / 100.0)
+        _opt3_ops_day = (_total_cost_incl_m - _mob_fee_t) / max(_campaign_days, 1)
+        _opt3_gj = _sell_b_t
+
+        # Option 4 — Take-or-Pay (v3 corrected)
+        _opt4_tariff = _sell_b_t
+        _contractual_floor = _annual_gj_t * (_top_pct_t / 100.0)
+        _economic_floor = _fixed_cost_incl_m / max(_opt4_tariff, 1e-9)
+        _opt4_floor = max(_contractual_floor, _economic_floor)
+
+        if _annual_gj_t > 0:
+            _th_s2 = "style='padding:6px 8px; text-align:left; border:1px solid #cbd5e1;'"
+            _th_r2 = "style='padding:6px 8px; text-align:right; border:1px solid #cbd5e1;'"
+            def _tr2(bg, c1, c2, c3, c4, c5):
+                _sl = f"style='padding:5px 8px; border:1px solid #e2e8f0; background:{bg};'"
+                _sr = f"style='padding:5px 8px; text-align:right; border:1px solid #e2e8f0; background:{bg};'"
+                return (f"<tr><td {_sl}>{c1}</td><td {_sr}>{c2}</td>"
+                        f"<td {_sr}>{c3}</td><td {_sr}>{c4}</td><td {_sr}>{c5}</td></tr>")
+            _tariff_html = (
+                "<table style='width:100%; border-collapse:collapse; font-size:13px; margin:8px 0;'>"
+                f"<tr style='background:#1e3a8a; color:white;'>"
+                f"<th {_th_s2}>Metric</th>"
+                f"<th {_th_r2}>Opt 1 — Day Rate</th>"
+                f"<th {_th_r2}>Opt 2 — Two-Part</th>"
+                f"<th {_th_r2}>Opt 3 — Mob+Day</th>"
+                f"<th {_th_r2}>Opt 4 — ToP</th></tr>"
+                + _tr2("#f8fafc", "Structure", "$/day flat", "$/day + $/GJ", "Mob fee + $/day", "$/GJ + floor")
+                + _tr2("white", "Fixed charge",
+                       f"${_opt1_day:,.0f}/day", f"${_opt2_a_day:,.0f}/day",
+                       f"${_mob_fee_t:,.0f} mob", "—")
+                + _tr2("#f8fafc", "Variable charge",
+                       "—", f"${_opt2_b_gj:.2f}/GJ",
+                       f"${_opt3_ops_day:,.0f}/day", f"${_opt4_tariff:.2f}/GJ")
+                + _tr2("white", "<strong>Equiv. $/GJ</strong>",
+                       f"<strong>${_opt1_gj:.2f}</strong>", f"<strong>${_opt2_gj:.2f}</strong>",
+                       f"<strong>${_opt3_gj:.2f}</strong>", f"<strong>${_opt4_tariff:.2f}</strong>")
+                + _tr2("#f8fafc", "ToP floor [GJ]", "—", "—", "—", f"{_opt4_floor:,.0f}")
+                + "</table>"
+            )
+            st.markdown(_tariff_html, unsafe_allow_html=True)
+            st.caption(
+                f"Campaign: {_campaign_days:,.0f} days · Annual GJ: {_annual_gj_t:,.0f} · "
+                f"Fixed/total cost split: {_frac_fixed * 100:.0f}% fixed"
+            )
+        else:
+            st.info("Complete the Infrastructure & Transport Costs tab to populate tariff structures.")
+    else:
+        # Mode A — Power-as-a-Service summary
+        st.subheader("Power-as-a-Service Summary")
+        _gen_kwh_yr = max(float(st.session_state.get("gen_fleet_kwh_per_year", 0.0)), 1e-9)
+        _total_cost_yr_a = _sell_b_t * max(_annual_gj_t, 1e-9)
+        _paas_per_kwh = _total_cost_yr_a / _gen_kwh_yr
+        st.session_state["paas_cost_per_kwh"] = _paas_per_kwh
+
+        _paas_col1, _paas_col2 = st.columns(2)
+        with _paas_col1:
+            st.metric("Total H2Hauler service cost [AUD/yr]", f"${_total_cost_yr_a:,.0f}")
+            st.metric("kWh delivered [kWh/yr]", f"{_gen_kwh_yr:,.0f}")
+        with _paas_col2:
+            st.metric("Power-as-a-Service [$/kWh]", f"${_paas_per_kwh:.4f}")
+            st.metric("Equiv. Gas-as-a-Service [$/GJ]", f"${_sell_b_t:.2f}")
 
     # --- How is this calculated? expander ---
     with st.expander("How is this calculated?"):
