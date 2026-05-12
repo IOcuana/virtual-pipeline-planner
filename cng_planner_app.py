@@ -3926,7 +3926,15 @@ with tabs[5]:
                 legend_patches.append(
                     mpatches.Patch(color="#7C3AED", label="Carbon + Other Benefit")
                 )
-            ax.legend(handles=legend_patches, loc="lower right", fontsize=8)
+            ax.legend(
+                handles=legend_patches,
+                loc="upper center",
+                bbox_to_anchor=(0.5, -0.12),
+                ncol=3,
+                fontsize=8,
+                frameon=True,
+            )
+            fig.subplots_adjust(bottom=0.18)
 
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
