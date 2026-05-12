@@ -4033,25 +4033,42 @@ with tabs[5]:
         )
         st.markdown(_ben_html, unsafe_allow_html=True)
 
-    # --- Comparison callout (FR-06) ---
-    _sales_gas = float(st.session_state.get("sales_gas_value_per_gj", 0.0))
-    if _sales_gas == 0.0:
+    # --- Cost Competitiveness (UPD-07) ---
+    st.divider()
+    st.subheader("Cost Competitiveness")
+    _diesel_gj  = float(st.session_state.get("diesel_cost_per_gj", 0.0))
+    _diesel_kwh = float(st.session_state.get("diesel_cost_per_kwh", 0.0))
+    _grid_kwh   = float(st.session_state.get("grid_cost_per_kwh", 0.0))
+    _paas_kwh   = float(st.session_state.get("paas_cost_per_kwh", 0.0))
+    _app_mode_t = st.session_state.get("app_mode", "mode_b")
+
+    if _diesel_gj == 0.0 and _grid_kwh == 0.0:
         st.info(
-            "No sell price has been set on the Benefits & Carbon tab yet. "
-            "Set a gas sell price there to compare it against the required Sell Price."
+            "ℹ️ Visit the **Diesel & Grid Comparison** tab to enter the customer's "
+            "current energy costs. A competitiveness summary will appear here once set."
         )
-    elif _sell_price_B <= _sales_gas:
-        _surplus = _sales_gas - _sell_price_B
-        st.success(
-            f"Your current gas sell price (${_sales_gas:.2f}/GJ) covers the required sell "
-            f"price of ${_sell_price_B:.2f}/GJ. Implied surplus: ${_surplus:.2f}/GJ."
-        )
+    elif _app_mode_t == "mode_b":
+        _col_a, _col_b = st.columns(2)
+        _gap = _diesel_gj - _sell_price_B
+        with _col_a:
+            st.metric("H2Hauler Sell Price [$/GJ]", f"${_sell_price_B:.2f}",
+                      delta=f"${_gap:+.2f} vs diesel",
+                      delta_color="normal" if _gap >= 0 else "inverse",
+                      help="Positive delta = H2Hauler is cheaper than diesel.")
+        with _col_b:
+            st.metric("Diesel baseline [$/GJ]", f"${_diesel_gj:.2f}")
     else:
-        _shortfall = _sell_price_B - _sales_gas
-        st.warning(
-            f"Your current gas sell price (${_sales_gas:.2f}/GJ) is below the required sell "
-            f"price of ${_sell_price_B:.2f}/GJ. Shortfall: ${_shortfall:.2f}/GJ."
-        )
+        _col_a, _col_b, _col_c = st.columns(3)
+        _gap_dsl = _diesel_kwh - _paas_kwh
+        with _col_a:
+            st.metric("H2Hauler PaaS [$/kWh]", f"${_paas_kwh:.4f}",
+                      delta=f"${_gap_dsl:+.4f} vs diesel",
+                      delta_color="normal" if _gap_dsl >= 0 else "inverse")
+        with _col_b:
+            st.metric("Diesel baseline [$/kWh]", f"${_diesel_kwh:.4f}")
+        with _col_c:
+            st.metric("Grid baseline [$/kWh]",
+                      f"${_grid_kwh:.4f}" if _grid_kwh > 0 else "Not set")
 
     # --- Mode-dependent summary section ---
     st.divider()
