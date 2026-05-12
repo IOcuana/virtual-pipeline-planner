@@ -3934,7 +3934,7 @@ with tabs[5]:
                 fontsize=8,
                 frameon=True,
             )
-            fig.subplots_adjust(bottom=0.18)
+            fig.subplots_adjust(bottom=0.22)
 
             st.pyplot(fig, use_container_width=True)
             plt.close(fig)
@@ -4543,7 +4543,7 @@ with tabs[4]:
     c2.metric("Carbon avoidance [$/yr]", f"${carbon_benefit_year:,.0f}")
     c3.metric("Other [$/yr]", f"${other_benefit_year:,.0f}")
     st.metric("Total annual benefit [$/yr]", f"${total_benefit_year:,.0f}")
-    st.metric("Levelized Benefit [$/GJ]", f"${levelized_benefit_per_gj:,.2f}")
+    st.metric("Sell Price [$/GJ]", f"${levelized_benefit_per_gj:,.2f}")
     st.caption("Includes gas value + carbon avoidance (+ other, if any), divided by annual GJ delivered.")
     help_flyout(
         "levelized_benefit",
@@ -5002,8 +5002,8 @@ with tabs[7]:
     # Master list of outputs the Results table (and plot) can compute
     all_outputs = [
         "Levelized Cost [$/GJ]",
-        "Levelized Benefit [$/GJ]",
-        "Margin [$/GJ]",
+        "Sell Price [$/GJ]",
+        "Net Margin [$/GJ]",
         "Trucking Cost (excl. stations) [$/GJ]",
         "Active trucks",
         "A-triples in circulation",
@@ -5035,8 +5035,8 @@ with tabs[7]:
             options=all_outputs,
             default=[
                 "Levelized Cost [$/GJ]",
-                "Levelized Benefit [$/GJ]",
-                "Margin [$/GJ]",
+                "Sell Price [$/GJ]",
+                "Net Margin [$/GJ]",
                 "Trucking Cost (excl. stations) [$/GJ]",
             ],
             key="scen_selected_outputs"
@@ -5291,9 +5291,9 @@ with tabs[7]:
             try:
                 if out == "Levelized Cost [$/GJ]":
                     val = None if m.get("lc_per_gj") is None else float(m["lc_per_gj"])
-                elif out == "Levelized Benefit [$/GJ]":
+                elif out == "Sell Price [$/GJ]":
                     val = None if m.get("lb_per_gj") is None else float(m["lb_per_gj"])
-                elif out == "Margin [$/GJ]":
+                elif out == "Net Margin [$/GJ]":
                     val = None if m.get("margin_per_gj") is None else float(m["margin_per_gj"])
                 elif out == "Trucking Cost (excl. stations) [$/GJ]":
                     val = None if m.get("transport_lc_per_gj") is None else float(m["transport_lc_per_gj"])
@@ -5541,7 +5541,7 @@ with tabs[7]:
 
                 # Options for Y2 must exclude Y1
                 y2_all_options = [c for c in y_candidates if c != y1_name]
-                y2_default = st.session_state.get("scen_plot_y2", "Levelized Benefit [$/GJ]")
+                y2_default = st.session_state.get("scen_plot_y2", "Sell Price [$/GJ]")
 
                 # If we have at least two y-candidates overall, keep the Y2 select enabled.
                 y2_disabled = (not enable_y2) or (len(y_candidates) <= 1)
