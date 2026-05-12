@@ -93,6 +93,11 @@ for _i in range(1, 6):
     st.session_state.setdefault(f"gen_{_i}_load_factor_pct", 80.0)
     st.session_state.setdefault(f"gen_{_i}_efficiency_pct", 35.0)
     st.session_state.setdefault(f"gen_{_i}_gas_lhv_mj_nm3", 38.0)
+for _i in range(1, 6):
+    st.session_state.setdefault(f"gen_{_i}_capex", 1_000_000.0)
+st.session_state.setdefault("gen_opex_pct", 5.0)
+st.session_state.setdefault("gen_fleet_capex", 0.0)
+st.session_state.setdefault("gen_fleet_opex_year", 0.0)
 
 
 from textwrap import dedent  # (keep once near here if not already imported)
@@ -2391,6 +2396,31 @@ with tabs[3]:
                 on_change=_update_mode_a,
                 label_visibility="collapsed",
             )
+        # --- Generator CAPEX (UPD-02) ---
+        st.markdown("**Generator CAPEX**")
+        for _gi in range(1, 6):
+            if st.session_state.get(f"gen_{_gi}_enabled", False):
+                currency_commas(
+                    f"Generator {_gi} — unit purchase & install CAPEX [$AUD]",
+                    key=f"gen_{_gi}_capex",
+                    value=1_000_000.0,
+                    help=f"Gen {_gi} total installed cost: purchase, delivery, civil works, commissioning.",
+                )
+        gen_opex_pct_v = st.number_input(
+            "Generator fleet OPEX [% of fleet CAPEX/yr]",
+            key="gen_opex_pct", min_value=0.0, max_value=50.0, value=5.0, step=0.5,
+            help="Annual O&M as % of fleet CAPEX. Covers maintenance, consumables, unplanned repairs. Default 5%.",
+        )
+        _gen_fleet_capex = sum(
+            float(st.session_state.get(f"gen_{_gi}_capex", 0.0))
+            for _gi in range(1, 6)
+            if st.session_state.get(f"gen_{_gi}_enabled", False)
+        )
+        _gen_fleet_opex_year = _gen_fleet_capex * (gen_opex_pct_v / 100.0)
+        st.session_state["gen_fleet_capex"] = _gen_fleet_capex
+        st.session_state["gen_fleet_opex_year"] = _gen_fleet_opex_year
+        st.metric("Generator fleet CAPEX", f"${_gen_fleet_capex:,.0f}")
+        st.metric(f"Generator fleet OPEX ({gen_opex_pct_v:.1f}%/yr)", f"${_gen_fleet_opex_year:,.0f}/yr")
         st.divider()
         _fleet_kwh = float(st.session_state.get("gen_fleet_kwh_per_year", 0.0))
         st.caption(

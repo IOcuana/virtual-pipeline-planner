@@ -187,12 +187,15 @@ def compute_levelized_metrics_for_scenario(
     total_dollies = int(math.ceil(combos_in_circ * dollies_per_combo))
 
     bess_gas_capex = _get_float("bess_gas_capex", 0.0)
+    gen_fleet_capex   = _get_float("gen_fleet_capex", 0.0)
+    gen_fleet_opex_yr = _get_float("gen_fleet_opex_year", 0.0)
     capex_total_all = (
         active_trucks * truck_capex_unit
         + (a_trailers * a_trailer_capex_unit + b_trailers * b_trailer_capex_unit + total_dollies * dolly_capex_unit)
         + ms_capex
         + ds_capex
         + bess_gas_capex
+        + gen_fleet_capex
     )
 
     if st.session_state.get("maint_basis_trk", "$/km") == "$/km":
@@ -254,7 +257,7 @@ def compute_levelized_metrics_for_scenario(
         trk_maint_year + trl_maint_year + fuel_cost_year + driver_cost_year + other_opex_year
     )
 
-    infra_opex_year = ms_opex_year + ds_opex_year
+    infra_opex_year = ms_opex_year + ds_opex_year + gen_fleet_opex_yr
     station_energy_year = ms_energy_cost_year
     annuitized_capex_year = capex_total_all * crf
     total_annual_cost = annuitized_capex_year + infra_opex_year + station_energy_year + transport_ops_year
