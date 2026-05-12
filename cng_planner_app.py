@@ -4581,6 +4581,75 @@ with tabs[6]:
         "as alternative energy supply options."
     )
 
+    # --- Comparison Chart (top of tab — UPD-08) ---
+    if (float(st.session_state.get("diesel_cost_per_kwh", 0.0)) == 0.0
+            and float(st.session_state.get("grid_cost_per_kwh", 0.0)) == 0.0):
+        st.info("Enter Diesel and Grid inputs below to populate this chart.")
+    else:
+        if not MPL_OK:
+            st.warning("Matplotlib is not available — install matplotlib to view the comparison chart.")
+        else:
+            _h2_sell_b = float(st.session_state.get("sell_price_B", 0.0))
+            _h2_paas = float(st.session_state.get("paas_cost_per_kwh", 0.0))
+            _dsl_kwh = float(st.session_state.get("diesel_cost_per_kwh", 0.0))
+            _dsl_gj = float(st.session_state.get("diesel_cost_per_gj", 0.0))
+            _grid_kwh = float(st.session_state.get("grid_cost_per_kwh", 0.0))
+            _app_mode_chart = st.session_state.get("app_mode", "mode_b")
+
+            import matplotlib.patches as mpatches
+
+            _fig7, (_ax_gj, _ax_kwh) = plt.subplots(1, 2, figsize=(12, 4))
+
+            # Left panel — $/GJ
+            _gj_labels = ["H2Hauler\nGas-as-a-Service", "Diesel\n(GJ equiv.)"]
+            _gj_values = [_h2_sell_b, _dsl_gj]
+            _gj_colors = ["#1E3A8A", "#DC2626"]
+            _bars_gj = _ax_gj.bar(_gj_labels, _gj_values, color=_gj_colors, edgecolor="white", width=0.5)
+            for _bar, _val in zip(_bars_gj, _gj_values):
+                if _val > 0:
+                    _ax_gj.text(
+                        _bar.get_x() + _bar.get_width() / 2, _bar.get_height() + max(_gj_values) * 0.01,
+                        f"${_val:.2f}", ha="center", va="bottom", fontsize=10, fontweight="bold",
+                    )
+            _ax_gj.set_ylabel("$/GJ")
+            _ax_gj.set_title("Cost Comparison [$/GJ]")
+            _ax_gj.set_ylim(bottom=0)
+
+            # Right panel — $/kWh
+            if _app_mode_chart == "mode_a":
+                _kwh_labels = ["H2Hauler\nPower-as-a-Service", "Diesel\n[$/kWh]", "Grid\n[$/kWh]"]
+                _kwh_values = [_h2_paas, _dsl_kwh, _grid_kwh]
+                _kwh_colors = ["#1E3A8A", "#DC2626", "#D97706"]
+            else:
+                _kwh_labels = ["H2Hauler\n(N/A Mode B)", "Diesel\n[$/kWh]", "Grid\n[$/kWh]"]
+                _kwh_values = [0.0, _dsl_kwh, _grid_kwh]
+                _kwh_colors = ["#94A3B8", "#DC2626", "#D97706"]
+            _bars_kwh = _ax_kwh.bar(_kwh_labels, _kwh_values, color=_kwh_colors, edgecolor="white", width=0.5)
+            for _bar, _val, _lbl in zip(_bars_kwh, _kwh_values, _kwh_labels):
+                if "N/A" in _lbl:
+                    _ax_kwh.text(
+                        _bar.get_x() + _bar.get_width() / 2, max(_kwh_values) * 0.03,
+                        "N/A\n(Mode B)", ha="center", va="bottom", fontsize=9, color="#475569",
+                    )
+                elif _val > 0:
+                    _ax_kwh.text(
+                        _bar.get_x() + _bar.get_width() / 2, _val + max(_kwh_values) * 0.01,
+                        f"${_val:.3f}", ha="center", va="bottom", fontsize=10, fontweight="bold",
+                    )
+            _ax_kwh.set_ylabel("$/kWh")
+            _ax_kwh.set_title("Cost Comparison [$/kWh]")
+            _ax_kwh.set_ylim(bottom=0)
+
+            plt.tight_layout()
+            st.pyplot(_fig7, use_container_width=True)
+            plt.close(_fig7)
+
+            if _app_mode_chart == "mode_b":
+                st.caption(
+                    "Switch to Mode A (Infrastructure tab → Gas Generators) to show H2Hauler "
+                    "Power-as-a-Service in the $/kWh panel."
+                )
+    st.divider()
     # --- Electrical Load Reference ---
     st.subheader("Electrical Load Reference")
     st.caption(
@@ -4809,76 +4878,6 @@ with tabs[6]:
             f"Annual amort: ${_annual_grid_capex:,.0f} · Energy: ${_annual_energy_cost:,.0f}/yr · "
             f"Demand: ${_annual_demand_cost:,.0f}/yr"
         )
-
-    # =========================================================
-    # Comparison Bar Chart
-    # =========================================================
-    st.divider()
-    st.subheader("Cost Comparison")
-
-    if not MPL_OK:
-        st.warning("Matplotlib is not available — install matplotlib to view the comparison chart.")
-    else:
-        _h2_sell_b = float(st.session_state.get("sell_price_B", 0.0))
-        _h2_paas = float(st.session_state.get("paas_cost_per_kwh", 0.0))
-        _dsl_kwh = float(st.session_state.get("diesel_cost_per_kwh", 0.0))
-        _dsl_gj = float(st.session_state.get("diesel_cost_per_gj", 0.0))
-        _grid_kwh = float(st.session_state.get("grid_cost_per_kwh", 0.0))
-        _app_mode_chart = st.session_state.get("app_mode", "mode_b")
-
-        import matplotlib.patches as mpatches
-
-        _fig7, (_ax_gj, _ax_kwh) = plt.subplots(1, 2, figsize=(12, 4))
-
-        # Left panel — $/GJ
-        _gj_labels = ["H2Hauler\nGas-as-a-Service", "Diesel\n(GJ equiv.)"]
-        _gj_values = [_h2_sell_b, _dsl_gj]
-        _gj_colors = ["#1E3A8A", "#DC2626"]
-        _bars_gj = _ax_gj.bar(_gj_labels, _gj_values, color=_gj_colors, edgecolor="white", width=0.5)
-        for _bar, _val in zip(_bars_gj, _gj_values):
-            if _val > 0:
-                _ax_gj.text(
-                    _bar.get_x() + _bar.get_width() / 2, _bar.get_height() + max(_gj_values) * 0.01,
-                    f"${_val:.2f}", ha="center", va="bottom", fontsize=10, fontweight="bold",
-                )
-        _ax_gj.set_ylabel("$/GJ")
-        _ax_gj.set_title("Cost Comparison [$/GJ]")
-        _ax_gj.set_ylim(bottom=0)
-
-        # Right panel — $/kWh
-        if _app_mode_chart == "mode_a":
-            _kwh_labels = ["H2Hauler\nPower-as-a-Service", "Diesel\n[$/kWh]", "Grid\n[$/kWh]"]
-            _kwh_values = [_h2_paas, _dsl_kwh, _grid_kwh]
-            _kwh_colors = ["#1E3A8A", "#DC2626", "#D97706"]
-        else:
-            _kwh_labels = ["H2Hauler\n(N/A Mode B)", "Diesel\n[$/kWh]", "Grid\n[$/kWh]"]
-            _kwh_values = [0.0, _dsl_kwh, _grid_kwh]
-            _kwh_colors = ["#94A3B8", "#DC2626", "#D97706"]
-        _bars_kwh = _ax_kwh.bar(_kwh_labels, _kwh_values, color=_kwh_colors, edgecolor="white", width=0.5)
-        for _bar, _val, _lbl in zip(_bars_kwh, _kwh_values, _kwh_labels):
-            if "N/A" in _lbl:
-                _ax_kwh.text(
-                    _bar.get_x() + _bar.get_width() / 2, max(_kwh_values) * 0.03,
-                    "N/A\n(Mode B)", ha="center", va="bottom", fontsize=9, color="#475569",
-                )
-            elif _val > 0:
-                _ax_kwh.text(
-                    _bar.get_x() + _bar.get_width() / 2, _val + max(_kwh_values) * 0.01,
-                    f"${_val:.3f}", ha="center", va="bottom", fontsize=10, fontweight="bold",
-                )
-        _ax_kwh.set_ylabel("$/kWh")
-        _ax_kwh.set_title("Cost Comparison [$/kWh]")
-        _ax_kwh.set_ylim(bottom=0)
-
-        plt.tight_layout()
-        st.pyplot(_fig7, use_container_width=True)
-        plt.close(_fig7)
-
-        if _app_mode_chart == "mode_b":
-            st.caption(
-                "Switch to Mode A (Infrastructure tab → Gas Generators) to show H2Hauler "
-                "Power-as-a-Service in the $/kWh panel."
-            )
 
 # ---------------------------------------
 # Scenarios tab (index 7)
