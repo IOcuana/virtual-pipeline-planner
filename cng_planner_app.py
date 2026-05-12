@@ -4802,10 +4802,15 @@ with tabs[6]:
         st.metric("Annual diesel cost [AUD/yr]", f"${_annual_dsl_cost:,.0f}")
         st.metric("Diesel cost [$/kWh]", f"${_diesel_cost_per_kwh:.3f}")
         st.metric("Diesel cost [$/GJ equiv.]", f"${_diesel_cost_per_gj:.2f}")
-        st.caption(
-            f"CAPEX: ${_total_dsl_capex:,.0f} · CRF: {_dsl_crf:.4f} · "
-            f"Annual amort: ${_annual_dsl_amort:,.0f} · Fuel: ${_annual_fuel_cost:,.0f}/yr"
-        )
+        with st.expander("How is CAPEX annualised? (show working)", expanded=False):
+            st.markdown(
+                f"- Total CAPEX (incl. contingency): **${_total_dsl_capex:,.0f}**\n"
+                f"- Finance rate: **{_dsl_rate_f*100:.1f}%** · Asset life: **{_dsl_life_f:.0f} yr**\n"
+                f"- CRF: **{_dsl_crf:.5f}**\n"
+                f"- Annual CAPEX charge = **${_annual_dsl_amort:,.0f}/yr**\n"
+                f"- Annual fuel cost = **${_annual_fuel_cost:,.0f}/yr**\n\n"
+                "_CRF = i(1+i)ⁿ / ((1+i)ⁿ − 1)_"
+            )
 
     # =========================================================
     # Grid Connection Section
@@ -4873,11 +4878,16 @@ with tabs[6]:
 
         st.metric("Annual grid cost [AUD/yr]", f"${_annual_grid_cost:,.0f}")
         st.metric("Grid cost [$/kWh]", f"${_grid_cost_per_kwh:.3f}")
-        st.caption(
-            f"CAPEX: ${_total_grid_capex:,.0f} · CRF: {_grid_crf:.4f} · "
-            f"Annual amort: ${_annual_grid_capex:,.0f} · Energy: ${_annual_energy_cost:,.0f}/yr · "
-            f"Demand: ${_annual_demand_cost:,.0f}/yr"
-        )
+        with st.expander("How is CAPEX annualised? (show working)", expanded=False):
+            st.markdown(
+                f"- Total CAPEX (incl. contingency): **${_total_grid_capex:,.0f}**\n"
+                f"- Finance rate: **{_grid_rate_f*100:.1f}%** · Asset life: **{_grid_life_f:.0f} yr**\n"
+                f"- CRF: **{_grid_crf:.5f}**\n"
+                f"- Annual CAPEX charge = **${_annual_grid_capex:,.0f}/yr**\n"
+                f"- Annual energy cost = **${_annual_energy_cost:,.0f}/yr**\n"
+                f"- Annual demand cost = **${_annual_demand_cost:,.0f}/yr**\n\n"
+                "_CRF = i(1+i)ⁿ / ((1+i)ⁿ − 1)_"
+            )
 
 # ---------------------------------------
 # Scenarios tab (index 7)
