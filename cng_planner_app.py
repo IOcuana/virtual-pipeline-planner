@@ -3905,7 +3905,7 @@ with tabs[5]:
                         height=0.5, color="#7C3AED", edgecolor="white", lw=1.5)
                 ax.text(
                     _sell_price_B + benefit_extension / 2, -0.6,
-                    "Carbon + Other Benefit",
+                    f"${benefit_extension:.2f}",
                     ha="center", va="center",
                     color="white", fontsize=9, fontweight="bold",
                 )
