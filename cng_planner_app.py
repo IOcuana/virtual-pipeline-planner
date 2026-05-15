@@ -4097,7 +4097,7 @@ with tabs[5]:
                 value=60.0, step=1.0,
             )
         with _col_tv:
-            st.metric("Campaign duration", f"{_campaign_days:,.0f} days")
+            st.metric("Project duration", f"{_campaign_days:,.0f} days")
             st.metric("Annual GJ delivered", f"{_annual_gj_t:,.0f} GJ")
 
         # Fixed / variable cost split (from finance_helpers via session_state)
@@ -4169,7 +4169,7 @@ with tabs[5]:
             )
             st.markdown(_tariff_html, unsafe_allow_html=True)
             st.caption(
-                f"Campaign: {_campaign_days:,.0f} days · Annual GJ: {_annual_gj_t:,.0f} · "
+                f"Project: {_campaign_days:,.0f} days · Annual GJ: {_annual_gj_t:,.0f} · "
                 f"Fixed/total cost split: {_frac_fixed * 100:.0f}% fixed"
             )
         else:
